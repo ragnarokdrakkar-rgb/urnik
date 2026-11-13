@@ -551,6 +551,51 @@ button:focus-visible { outline:3px solid #9db2ff; outline-offset:2px; }
   .month-view .chip .who-short { display:block; font-size:9.5px; font-weight:800; line-height:1.2; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-.03em; }
   .month-view .chip .slot-type { font-size:8px; margin-top:2px; padding:1px 0; background:transparent!important; opacity:.85; }
 }
+
+/* ---- Izboljsave: hitro dodajanje, predloge, prosto, ime, statistika ---- */
+.cell .day-add { display:block; margin-top:auto; width:100%; min-height:26px; padding:0; border:1px dashed #b9c3d3; background:transparent; color:var(--muted); font-size:15px; font-weight:700; border-radius:6px; line-height:1; }
+.cell .day-add:hover { border-color:var(--accent); color:var(--accent); background:#f3f6ff; }
+.list-view .cell .day-add { width:auto; padding:0 16px; margin-top:0; min-height:36px; }
+.free-alert { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:0 0 10px; padding:8px 10px; border:1px solid #bfe3cb; background:#f1faf4; border-radius:10px; font-size:13px; color:#17603a; }
+.free-alert.ok { color:var(--muted); background:transparent; border-color:var(--line); }
+.free-alert strong { margin-right:4px; }
+.free-pill { min-height:32px; padding:3px 9px; font-size:12px; background:#fff; border:2px dashed #1f9d57; color:#17703c; font-weight:700; }
+.free-more { min-height:32px; padding:3px 8px; font-size:12px; }
+#namePick { flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+#namePick[hidden] { display:none; }
+.name-pill { min-height:36px; padding:4px 12px; border-left-width:4px; font-weight:700; font-size:13px; }
+.tpl-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:12px 0; }
+.tpl { display:inline-flex; }
+.tpl .tpl-use { border-radius:10px 0 0 10px; font-size:12px; padding:6px 9px; min-height:36px; }
+.tpl .tpl-del { border-radius:0 10px 10px 0; border-left:0; padding:6px 9px; min-height:36px; color:var(--muted); font-size:14px; }
+.tpl-save { font-size:12px; min-height:36px; padding:6px 9px; }
+.repeat-box { margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+.wd-toggle { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0 10px; }
+.wd-toggle button { min-width:44px; min-height:40px; padding:4px 6px; font-size:12px; }
+.wd-toggle button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.quick-info { margin-top:10px; font-weight:600; }
+.people-head { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
+.people-nav { display:flex; align-items:center; gap:8px; }
+.people-nav h3 { margin:0; min-width:150px; text-align:center; }
+.people-nav .arrow { width:36px; min-height:36px; padding:0; font-size:20px; }
+.people-tools { display:flex; gap:6px; }
+.people-tools button,.copy-btn { font-size:12px; min-height:36px; padding:6px 10px; }
+.people-bars { display:grid; gap:6px; margin-top:10px; }
+.pbar { display:grid; grid-template-columns:minmax(90px,150px) 1fr auto; grid-template-areas:"name track hours" "name break break"; gap:3px 10px; align-items:center; text-align:left; padding:8px 10px; width:100%; }
+.pbar-name { grid-area:name; border:1px solid; border-left-width:4px; border-radius:6px; padding:3px 8px; font-weight:700; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pbar-track { grid-area:track; display:flex; height:12px; background:#eef1f5; border-radius:99px; overflow:hidden; }
+.pbar-seg { height:100%; }
+.pbar-hours { grid-area:hours; font-weight:700; }
+.pbar-break { grid-area:break; font-size:11px; color:var(--muted); font-weight:500; }
+.pbar-legend { display:flex; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:4px; }
+.pbar-legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; }
+.copy-preview { margin-top:12px; padding:10px; border:1px solid var(--line); border-radius:10px; font-size:13px; max-height:220px; overflow:auto; display:grid; gap:4px; }
+.copy-preview ul { margin:4px 0 0; padding-left:18px; }
+@media(max-width:720px) {
+  .month-view .cell .day-add { min-height:22px; font-size:13px; }
+  .pbar { grid-template-columns:minmax(70px,104px) 1fr auto; padding:8px; }
+  .people-nav h3 { min-width:120px; font-size:16px; }
+}
 </style>
 </head>
 <body>
@@ -978,6 +1023,9 @@ function initUI(){
 }
 
  
+</script>
+<script src="izboljsave.js?v=1"></script>
+<script>
 initUI();
 var nameEl=document.getElementById('name');nameEl.value=loadName();state.name=nameEl.value.trim();nameEl.addEventListener('input',function(){state.name=this.value.trim();saveName(state.name);nextRead('mine');clearTimeout(state.nameTimer);state.nameTimer=setTimeout(function(){renderCalendar(state.monthCache[state.ym]||[]);if(state.tab==='mine')renderMine()},300)});
 state.ym=ymToday();state.adminMonth=state.ym;state.statsYear=new Date().getFullYear();state.statsMonth=state.ym;document.getElementById('adminMonth').value=state.adminMonth;showCalendarMonth(state.ym);
