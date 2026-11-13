@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Razpored</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains&#43;Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root { --surface:#fff; --accentSoft:#edf1ff; --ne:#1f9d57; --da:#2f6fed; --fbx:#d98213; --danger:#c2362f; }
+* { box-sizing:border-box; }
+html,body { margin:0; }
+body { font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--ink); line-height:1.45; -webkit-font-smoothing:antialiased; }
+.mono { font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums; }
+header { position:sticky; top:0; z-index:30; border-bottom:1px solid var(--line); }
+.bar,.namerow,.tabs { max-width:1180px; margin:0 auto; }
+.bar { display:flex; align-items:center; flex-wrap:wrap; }
+.brand { font-weight:800; letter-spacing:-.025em; }
+.brand .dot { color:var(--accent); }
+.nav { display:flex; align-items:center; gap:6px; }
+.nav button { min-width:36px; padding:0 10px; }
+.nav .arrow { width:36px; padding:0; font-size:20px; }
+.month { text-align:center; font-weight:700; }
+.grow { flex:1; }
+.meter { display:flex; gap:8px; align-items:center; color:var(--muted); }
+.track { display:block; height:8px; background:#dfe5ec; border-radius:99px; overflow:hidden; }
+.fill { display:block; height:100%; width:0; background:linear-gradient(90deg,#1f9d57,#48c883); transition:width .25s ease; }
+.namerow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.tabs { display:flex; overflow-x:auto; }
+input,select,textarea,button { font:inherit; color:inherit; }
+input[type=text],input[type=password],input[type=date],input[type=month],input[type=time],select,textarea { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 11px; outline:none; }
+input:focus,select:focus,textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(47,84,235,.13); }
+#name { font-weight:600; }
+button { cursor:pointer; border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:9px 13px; font-weight:600; transition:.12s ease; }
+button:hover { border-color:#c9d2df; background:#fafbfc; }
+button:active { transform:translateY(1px); }
+button:disabled { opacity:.5; cursor:not-allowed; }
+.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.primary:hover { background:#274bd5; }
+.ghost { background:transparent; color:var(--muted); }
+.danger { color:var(--danger); border-color:#f0c7c4; }
+.danger:hover { background:#fff4f3; }
+.tabs button { border-color:transparent; background:transparent; color:var(--muted); white-space:nowrap; }
+.tabs button.on { background:var(--surface); border-bottom-color:var(--surface); }
+main { max-width:1180px; margin:0 auto; }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+.row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.hint { color:var(--muted); font-size:12.5px; }
+label.lab { display:block; margin:10px 0 4px; font-size:13px; color:var(--muted); }
+.calendar-tools { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.admin-delete-tools { display:none; align-items:center; gap:8px; padding:7px 9px; border:1px solid #f0c7c4; background:#fff6f5; border-radius:10px; color:#a9312b; font-size:12.5px; font-weight:700; }
+.admin-delete-tools.on { display:flex; }
+.delete-mode-banner { display:none; margin-bottom:10px; padding:9px 11px; border-radius:10px; background:#fff0ef; border:1px solid #efb5b0; color:#a82e28; font-weight:700; font-size:13px; }
+.delete-mode .delete-mode-banner { display:block; }
+.delete-mode .chip { box-shadow:inset 0 0 0 1px #d94b42; }
+.delete-mode .chip:hover { border-color:#d94b42; background:#fff2f1; }
+.week-head { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:8px; }
+.week-head div { text-align:center; color:var(--muted); font-size:12px; font-weight:700; text-transform:uppercase; }
+.grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; }
+.cell { border:1px solid var(--line); display:flex; flex-direction:column; gap:6px; }
+.cell.empty { border-color:transparent; background:transparent; }
+.cell.today { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+.daynum { font-size:13px; font-weight:700; color:var(--muted); }
+.cell.today .daynum { color:var(--accent); }
+.wd { display:none; }
+.empty-day { font-size:12px; color:#b3bcc6; }
+.chip { width:100%; display:flex; align-items:stretch; text-align:left; font-size:12.5px; }
+.chip .pill { width:7px; flex:0 0 7px; border-radius:99px; }
+.chip .body { min-width:0; flex:1; }
+.chip .t { display:block; font-weight:600; }
+.chip .who { display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; }
+.chip.free .pill { background:#e0463b; }
+.chip[data-tip=NE] .pill { background:var(--ne); }
+.chip[data-tip=DA] .pill { background:var(--da); }
+.chip[data-tip=FBX] .pill { background:var(--fbx); }
+.chip.taken[data-tip=NE] { background:#eafaf0; border-color:#bfe9cf; }
+.chip.taken[data-tip=DA] { background:#e9f0ff; border-color:#c4d6ff; }
+.chip.taken[data-tip=FBX] { background:#fdf3e2; border-color:#f3d9a8; }
+.legend { display:flex; flex-wrap:wrap; margin-top:11px; font-size:12.5px; color:var(--muted); }
+.legend i { width:10px; height:10px; display:inline-block; border-radius:3px; margin-right:5px; }
+.list { display:flex; flex-direction:column; gap:8px; }
+.item { display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:#fcfdff; }
+.item .pill { width:8px; height:34px; border-radius:99px; }
+.item[data-tip=NE] .pill { background:var(--ne); }
+.item[data-tip=DA] .pill { background:var(--da); }
+.item[data-tip=FBX] .pill { background:var(--fbx); }
+.item .meta { flex:1; min-width:0; }
+.item .d { font-weight:700; }
+.item .s { color:var(--muted); font-size:13px; }
+.total { margin-top:12px; font-weight:800; }
+.stats-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+.stats-title { margin:0; font-size:22px; letter-spacing:-.025em; }
+.stats-year-nav { display:flex; align-items:center; gap:7px; }
+.stats-year { min-width:80px; text-align:center; font-size:18px; font-weight:800; }
+.stats-kpis { display:grid; grid-template-columns:repeat(3,1fr); margin-bottom:16px; }
+.kpi { border:1px solid var(--line); border-radius:14px; }
+.kpi-label { font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.055em; }
+.kpi-value { margin-top:3px; font-size:25px; font-weight:800; letter-spacing:-.025em; }
+.year-grid { display:grid; }
+.month-card { position:relative; border:1px solid var(--line); border-radius:14px; background:var(--surface); text-align:left; display:flex; flex-direction:column; cursor:pointer; }
+.month-card:hover { border-color:#bcc8d7; transform:translateY(-1px); box-shadow:0 7px 20px rgba(20,40,65,.07); }
+.month-card.selected { border-color:var(--accent); box-shadow:0 0 0 2px rgba(47,84,235,.13); }
+.month-card.current::after { content:"TA MESEC"; position:absolute; right:10px; top:10px; padding:3px 6px; border-radius:99px; background:var(--accentSoft); color:var(--accent); font-size:9px; font-weight:800; }
+.month-name { font-size:15px; font-weight:800; }
+.month-hours { font-weight:800; letter-spacing:-.035em; }
+.month-hours small { font-size:13px; color:var(--muted); font-weight:600; }
+.month-meta { margin-top:4px; color:var(--muted); font-size:12px; }
+.month-people { margin-top:auto; padding-top:9px; color:var(--muted); font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stats-detail,.annual-ranking { margin-top:18px; padding-top:18px; border-top:1px solid var(--line); }
+.stats-detail-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.stats-detail-head h3,.annual-ranking h3 { margin:0 0 10px; }
+.stat-person-list { display:flex; flex-direction:column; gap:7px; }
+.stat-person { display:grid; grid-template-columns:minmax(180px,1fr) 100px 110px; gap:10px; align-items:center; padding:11px 12px; border:1px solid var(--line); border-radius:11px; }
+.stat-person-name { font-weight:700; }
+.stat-person-count { text-align:right; color:var(--muted); font-size:13px; }
+.stat-person-hours { text-align:right; font-weight:800; }
+.admin-head { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+.admin-head h3 { margin:0; font-size:21px; }
+.admin-month-box { display:flex; align-items:flex-end; gap:8px; }
+.admin-tabs { display:flex; gap:5px; padding:5px; margin-bottom:16px; border-radius:12px; background:#f2f5f8; overflow-x:auto; }
+.admin-tabs button { flex:1; border:0; color:var(--muted); background:transparent; white-space:nowrap; }
+.admin-tabs button.on { background:var(--surface); color:var(--ink); box-shadow:0 1px 4px rgba(16,32,48,.10); }
+.admin-view[hidden] { display:none!important; }
+.admin-summary-bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.admin-kpi { min-width:130px; padding:10px 13px; border:1px solid var(--line); border-radius:12px; background:var(--surface2); }
+.admin-kpi .k { font-size:11px; font-weight:700; text-transform:uppercase; color:var(--muted); }
+.admin-kpi .v { margin-top:2px; font-size:20px; font-weight:800; }
+.admin-slot-list { display:flex; flex-direction:column; gap:8px; }
+.admin-slot { display:grid; grid-template-columns:115px 125px 105px minmax(150px,1fr) 85px 95px 70px; align-items:center; gap:9px; padding:10px 11px; border:1px solid var(--line); border-radius:12px; background:#fcfdff; }
+.admin-slot-head { border:0; background:transparent; color:var(--muted); padding:0 11px 4px; font-size:10px; font-weight:800; text-transform:uppercase; }
+.admin-slot .person { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+.admin-slot .hours { text-align:right; }
+.status { display:inline-flex; width:max-content; padding:4px 7px; border-radius:99px; font-size:10px; font-weight:800; }
+.status.PROST { color:#bd3029; background:#fdecea; }
+.status.DELNO { color:#a65f08; background:#fdf3e2; }
+.status.ZASEDEN { color:#167442; background:#e9f8ef; }
+.type-badge { display:inline-flex; width:max-content; padding:4px 7px; border-radius:7px; font-size:10px; font-weight:800; }
+.type-badge.NE { color:#167442; background:#e9f8ef; }
+.type-badge.DA { color:#2458bd; background:#e9f0ff; }
+.type-badge.FBX { color:#a65f08; background:#fdf3e2; }
+.admin-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.admin-form-grid .wide { grid-column:1/-1; }
+.signup-admin-list { display:flex; flex-direction:column; gap:7px; margin-top:12px; }
+.signup-admin-row { display:grid; grid-template-columns:minmax(140px,1fr) 125px 70px 68px; gap:8px; align-items:center; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:#fafcff; }
+.signup-admin-row .who { font-weight:700; }
+.section-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:15px; }
+.batch-intro { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:15px; }
+.batch-intro h3,.batch-draft-head h3 { margin:0 0 3px; }
+.batch-step { display:inline-flex; padding:7px 10px; border-radius:999px; background:#edf2ff; color:#294fb8; font-size:11px; font-weight:800; }
+.batch-planner { display:grid; gap:14px; }
+.batch-card { padding:14px; border:1px solid var(--line); border-radius:15px; }
+.batch-nav { display:flex; align-items:center; gap:7px; margin-bottom:12px; }
+.batch-nav strong { flex:1; text-align:center; text-transform:capitalize; }
+.batch-week,.batch-calendar { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; }
+.batch-week { margin-bottom:6px; }
+.batch-week span { text-align:center; color:var(--muted); font-size:10px; font-weight:800; text-transform:uppercase; }
+.batch-day { position:relative; border:1px solid var(--line); border-radius:10px; background:#fff; }
+.batch-day:hover { border-color:#9eb2f5; background:#f7f9ff; }
+.batch-day.selected { border-color:var(--accent); color:#fff; background:var(--accent); box-shadow:0 4px 12px rgba(47,84,235,.20); }
+.batch-day.today:not(.selected) { border-color:var(--accent); color:var(--accent); }
+.batch-day.in-draft:after { content:''; position:absolute; right:5px; bottom:5px; width:6px; height:6px; border-radius:50%; background:#f3a323; }
+.batch-day.selected.in-draft:after { background:#ffd16b; }
+.batch-blank { min-height:47px; }
+.batch-shortcuts { display:flex; gap:7px; flex-wrap:wrap; margin-top:11px; }
+.batch-compose { display:flex; flex-direction:column; }
+.batch-compose-title { font-weight:800; margin-bottom:8px; }
+.batch-selection { padding:9px 10px; border:1px dashed #bdc9d8; border-radius:10px; color:var(--muted); background:#fff; font-size:13px; }
+.batch-selected-chips { display:flex; gap:5px; flex-wrap:wrap; min-height:8px; margin:8px 0; }
+.batch-selected-chips span { padding:4px 7px; border-radius:999px; background:#eaf0ff; color:#294fb8; font-size:10px; font-weight:700; }
+.batch-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.batch-form-grid input,.batch-form-grid select { width:100%; }
+.batch-add { width:100%; margin-top:14px; }
+.batch-help { margin:8px 0 0; }
+.batch-draft-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:20px 0 10px; }
+.batch-count { padding:5px 9px; border-radius:999px; color:#2458bd; background:#e9f0ff; font-size:11px; font-weight:800; }
+.batch-draft-list { display:flex; flex-direction:column; gap:7px; }
+.batch-empty { padding:20px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); text-align:center; }
+.batch-draft-row { display:grid; gap:10px; align-items:center; padding:10px 11px; border:1px solid var(--line); border-radius:11px; background:#fcfdff; }
+.batch-draft-row .batch-date { font-weight:750; }
+.batch-draft-row .batch-time { font-weight:700; }
+.batch-draft-row .batch-qty { color:var(--muted); font-size:12px; }
+.batch-remove { width:34px; height:34px; padding:0; color:#c2362f; }
+.batch-publish-bar { position:sticky; bottom:0; z-index:8; display:flex; align-items:center; gap:9px; margin:14px -3px 0; padding:11px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.96); backdrop-filter:blur(8px); }
+.batch-publish-summary { flex:1; color:var(--muted); font-size:12px; }
+.batch-secondary { align-items:center; justify-content:space-between; gap:10px; margin-top:13px; padding-top:12px; border-top:1px solid var(--line); }
+.batch-day { padding:5px; text-align:left; display:flex; flex-direction:column; gap:3px; overflow:hidden; }
+.batch-day-number { display:block; font-size:12px; font-weight:850; line-height:1.1; text-align:right; }
+.batch-day-slots { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.batch-mini-slot { display:block; max-width:100%; border-radius:4px; overflow:hidden; color:#445466; background:#eef2f6; font-weight:700; line-height:1.2; white-space:nowrap; text-overflow:ellipsis; }
+.batch-mini-slot.PROST { color:#a53a33; background:#fff0ee; }
+.batch-mini-slot.DELNO { color:#965808; background:#fff3df; }
+.batch-mini-slot.ZASEDEN { color:#126d3d; background:#e7f7ed; }
+.batch-day.selected .batch-mini-slot { color:#fff; background:rgba(255,255,255,.18); }
+.batch-more-slots { padding-left:2px; color:var(--muted); font-size:8.5px; font-weight:800; }
+.batch-day.selected .batch-more-slots { color:rgba(255,255,255,.88); }
+.batch-day-count { display:none; }
+.batch-existing-summary { margin-top:11px; padding:10px 11px; border:1px solid var(--line); border-radius:11px; background:#fff; }
+.batch-existing-summary-head { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; }
+.batch-existing-summary-head strong { font-size:12px; }
+.batch-existing-summary-head span { color:var(--muted); font-size:10px; }
+.batch-existing-list { display:flex; flex-direction:column; gap:5px; }
+.batch-existing-row { display:grid; gap:7px; align-items:center; padding:6px 7px; border-radius:8px; background:#f7f9fc; }
+.batch-existing-row .time { font-weight:800; }
+.batch-existing-row .people { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.batch-existing-row .status-text { font-weight:800; }
+.batch-existing-row.PROST .status-text { color:#a53a33; }
+.batch-existing-row.DELNO .status-text { color:#965808; }
+.batch-existing-row.ZASEDEN .status-text { color:#126d3d; }
+.batch-existing-empty { color:var(--muted); font-size:11px; }
+.batch-existing-loading { color:var(--muted); font-size:11px; }
+@media(max-width:620px) {
+  .batch-day { min-height:48px; align-items:center; justify-content:center; padding:4px; text-align:center; }
+  .batch-day-number { text-align:center; font-size:12px; }
+  .batch-day-slots { display:none; }
+  .batch-day-count { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; border-radius:999px; color:#fff; background:#728096; font-size:8px; font-weight:850; }
+  .batch-day.selected .batch-day-count { color:var(--accent); background:#fff; }
+  .batch-existing-row { grid-template-columns:78px 62px minmax(0,1fr); padding:6px 5px; }
+}
+.stats-matrix-wrap { margin-top:18px; overflow:auto; border:1px solid var(--line); border-radius:13px; background:#fff; }
+.stats-matrix-title { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; padding:13px 14px; border-bottom:1px solid var(--line); }
+.stats-matrix-title h3 { margin:0; }
+.stats-matrix { width:100%; min-width:900px; border-collapse:separate; border-spacing:0; font-size:12px; }
+.stats-matrix th,.stats-matrix td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
+.stats-matrix th { position:sticky; top:0; background:#f6f8fb; color:var(--muted); font-size:10px; text-transform:uppercase; }
+.stats-matrix th:first-child,.stats-matrix td:first-child { position:sticky; left:0; z-index:2; min-width:155px; text-align:left; background:#fff; font-weight:700; }
+.stats-matrix th:first-child { z-index:3; background:#f6f8fb; }
+.stats-matrix th:last-child,.stats-matrix td:last-child { font-weight:850; color:var(--ink); background:#f8faff; }
+.stats-matrix td.zero { color:#c2cad4; }
+.stats-matrix tr:last-child td { border-bottom:0; }
+@media(max-width:820px) {
+  .batch-planner { grid-template-columns:1fr; }
+  .batch-publish-bar { flex-wrap:wrap; }
+  .batch-publish-summary { flex-basis:100%; }
+  .batch-publish-bar button { flex:1; }
+  .batch-secondary { align-items:flex-start; }
+}
+@media(max-width:520px) {
+  .batch-card { padding:10px; }
+  .batch-week,.batch-calendar { gap:4px; }
+  .batch-day,.batch-blank { min-height:44px; }
+  .batch-form-grid { grid-template-columns:1fr 1fr; }
+  .batch-draft-row { grid-template-columns:1fr auto; }
+  .batch-draft-row .batch-time { grid-column:1; }
+  .batch-draft-row .batch-qty { grid-column:1; }
+  .batch-remove { grid-column:2; grid-row:1/span 3; }
+  .batch-secondary { flex-direction:column; }
+  .batch-secondary button { width:100%; }
+}
+table.sum { width:100%; border-collapse:collapse; }
+table.sum th,table.sum td { padding:10px; text-align:left; border-bottom:1px solid var(--line); }
+table.sum th { font-size:11px; color:var(--muted); text-transform:uppercase; }
+table.sum .num { text-align:right; }
+table.sum tr.total td { border-top:2px solid var(--line); border-bottom:0; font-weight:800; }
+.scrim { position:fixed; inset:0; z-index:50; display:none; justify-content:center; align-items:flex-end; background:rgba(13,24,36,.44); }
+.scrim.on { display:flex; }
+.sheet { width:100%; max-height:92vh; overflow:auto; border-radius:18px 18px 0 0; background:var(--surface); box-shadow:var(--shadow); }
+.sheet h3 { margin:2px 0; font-size:18px; }
+.sheet .sub { margin-bottom:12px; color:var(--muted); font-size:13px; }
+.sheet .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+.sheet .actions button { flex:1 1 110px; }
+#msg { position:fixed; left:50%; bottom:16px; z-index:60; max-width:calc(100vw - 32px); transform:translateX(-50%); padding:10px 14px; border-radius:10px; color:#fff; background:var(--ink); font-size:13px; opacity:0; pointer-events:none; transition:.2s; }
+#msg.on { opacity:1; }
+.loading { padding:18px; text-align:center; color:var(--muted); font-size:13px; }
+@media(min-width:560px) {
+  .scrim { align-items:center; padding:16px; }
+  .sheet { border-radius:18px; }
+}
+@media(max-width:900px) {
+  .admin-slot-head { display:none; }
+  .admin-slot { grid-template-columns:1fr auto; gap:5px 10px; }
+  .admin-slot .type { grid-column:2; grid-row:1; }
+  .admin-slot .time { grid-column:1; }
+  .admin-slot .person { grid-column:1; }
+  .admin-slot .hours { grid-column:2; }
+  .admin-slot .state { grid-column:1; }
+  .admin-slot .edit { grid-column:2; }
+  .signup-admin-row { grid-template-columns:1fr auto; }
+  .signup-admin-row .time { grid-column:1; }
+  .signup-admin-row .hours { grid-column:2; }
+  .signup-admin-row .edit { grid-column:2; grid-row:1/3; }
+}
+@media(max-width:720px) {
+  .week-head { display:none; }
+  .cell.empty { display:none; }
+  .wd { display:inline; font-size:11px; color:var(--muted); }
+  .daynum { font-size:15px; }
+  .stat-person { grid-template-columns:1fr auto; }
+  .stat-person-count { grid-column:1; text-align:left; }
+  .stat-person-hours { grid-column:2; grid-row:1/span 2; }
+}
+@media(max-width:520px) {
+  main { padding:10px; }
+  .panel { padding:11px; }
+  .bar { gap:7px; }
+  .grow { display:none; }
+  .meter { margin-left:auto; }
+  .track { width:70px; }
+  .namerow label { width:100%; }
+  #name { width:100%; }
+  .month { min-width:105px; font-size:13px; }
+  .year-grid,.stats-kpis { grid-template-columns:1fr; }
+  .stats-kpis .kpi:first-child { grid-column:auto; }
+  .month-card { min-height:125px; }
+  .stats-year-nav { width:100%; }
+  .stats-year { flex:1; }
+  .admin-month-box { width:100%; }
+  .admin-month-box>div { flex:1; }
+  .admin-month-box input { width:100%; }
+  .admin-form-grid { grid-template-columns:1fr; }
+  .admin-form-grid .wide { grid-column:auto; }
+}
+@media(prefers-reduced-motion:reduce) {
+  * { transition:none!important; }
+}
+:root { --bg:#f6f7f9; --surface2:#fafbfc; --ink:#172336; --muted:#647084; --line:#e6e9ef; --accent:#3159dc; --radius:14px; --shadow:none; }
+header { background:#fff; backdrop-filter:none; }
+.bar,.namerow,.tabs,main { max-width:1400px; }
+.bar { padding:16px 24px; gap:16px; }
+.brand { font-size:22px; }
+.nav button { height:42px; }
+.month { min-width:170px; font-family:inherit; font-size:17px; }
+.meter { font-size:12px; }
+.track { width:70px; }
+.namerow { padding:0 24px 12px; }
+.namerow label { font-size:12px; color:var(--muted); }
+#name { min-width:170px; font-size:14px; }
+.tabs { padding:0 24px; gap:20px; }
+.tabs button { padding:13px 2px; border-radius:0; font-size:14px; }
+.tabs button.on { color:var(--accent); box-shadow:none; border-bottom:2px solid var(--accent); }
+main { padding:24px; }
+.panel { padding:20px; }
+button { min-height:40px; }
+button:focus-visible { outline:3px solid #9db2ff; outline-offset:2px; }
+.calendar-tools { margin-bottom:20px; }
+.view-switch { display:flex; gap:4px; }
+.view-switch button { font-size:12px; min-height:34px; padding:6px 12px; }
+.view-switch .on { background:var(--accentSoft); color:var(--accent); border-color:#cbd6fa; }
+.cell { min-height:128px; background:#fff; border-radius:10px; padding:8px; }
+.daynum { align-self:flex-start; background:transparent; border:0; padding:3px 5px; min-height:30px; }
+.chip { min-height:48px; border:0; border-left:3px solid #c3cad5; padding:7px; gap:0; border-radius:5px; }
+.chip .pill { display:none; }
+.chip .t { font-family:inherit; font-variant-numeric:tabular-nums; font-size:13px; }
+.chip .who { font-size:12px; }
+.chip.taken[data-tip] { background:#f0f3f8; border-color:#aeb9ca; }
+.chip.free { background:#edf7f0; border-color:#64ad7b; }
+.chip.free .who { color:#28723e; }
+.chip.mine { box-shadow:none; border-color:var(--accent); background:#edf2ff!important; }
+.legend { gap:18px; }
+.list-view .grid { grid-template-columns:1fr; }
+.list-view .week-head { display:none; }
+.list-view .cell.empty,.list-view .cell.no-slots { display:none; }
+.list-view .cell { min-height:0; display:grid; grid-template-columns:130px repeat(auto-fit,minmax(200px,1fr)); align-items:start; }
+.list-view .wd { display:inline; }
+.day-slot-list { display:grid; gap:10px; }
+.sheet { padding:24px; max-width:620px; }
+.sheet .sub { margin:8px 0 20px; }
+.sheet .chip .who { white-space:normal; }
+.stats-kpis { gap:12px; }
+.kpi { background:#fafbfc; padding:18px; }
+.year-grid { grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; }
+.month-card { min-height:86px; padding:12px; box-shadow:none!important; transform:none!important; }
+.month-hours { font-size:20px; margin-top:5px; }
+.month-people,.month-meta,.month-card.current:after { display:none; }
+.stats-detail { scroll-margin-top:210px; }
+.stat-person { width:100%; text-align:left; background:#fff; min-height:58px; }
+.stat-person:hover { background:#f6f8ff; border-color:#b8c8f2; }
+.annual-disclosure { margin-top:24px; border-top:1px solid var(--line); padding-top:16px; }
+.annual-disclosure summary { cursor:pointer; font-weight:650; padding:8px 0; }
+.public-note { font-size:13px; color:var(--muted); margin:4px 0 16px; }
+.person-log { display:grid; gap:8px; }
+.person-log-row { padding:12px; border:1px solid var(--line); border-radius:10px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.person-log-row small { display:block; color:var(--muted); margin-top:3px; }
+.batch-planner { grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr); }
+.batch-card { background:#fafbfc; }
+.batch-day { min-height:92px; }
+.batch-mini-slot { font-size:10px; padding:3px; }
+.batch-existing-row { font-size:12px; grid-template-columns:100px 60px minmax(0,1fr); }
+.batch-existing-row .people { white-space:normal; }
+.batch-secondary { display:none; }
+.batch-compose { align-self:start; position:sticky; top:190px; }
+.batch-publish-bar { box-shadow:0 -2px 12px #17233608; }
+.batch-form-grid input[type=number] { border:1px solid var(--line); border-radius:10px; padding:9px 11px; background:#fff; }
+.quick-add { white-space:nowrap; }
+.day-log-status { font-size:11px; color:var(--muted); }
+@media(max-width:900px) {
+  .batch-planner { grid-template-columns:1fr; }
+  .batch-compose { position:static; }
+  .year-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .bar { gap:8px; }
+  .month { min-width:140px; }
+}
+@media(max-width:720px) {
+  header { position:static; }
+  .bar { padding:14px 14px 10px; }
+  .brand { font-size:20px; }
+  .bar .nav { order:3; flex-basis:100%; justify-content:space-between; }
+  .bar .grow { display:block; }
+  .month { flex:1; }
+  .meter { display:none; }
+  .namerow { padding:0 14px 12px; gap:7px; }
+  .namerow label { width:auto; }
+  #name { width:auto; min-width:0; flex:1; font-size:16px; }
+  .namerow .hint { display:none; }
+  .tabs { padding:0 14px; gap:18px; }
+  .tabs button { font-size:13px; }
+  main { padding:12px; }
+  .panel { padding:12px; }
+  .calendar-tools { gap:12px; }
+  .grid { grid-template-columns:1fr; }
+  .cell { min-height:0; }
+  .cell.no-slots { display:none; }
+  .list-view .cell { display:flex; }
+  .month-view .grid { grid-template-columns:repeat(7,minmax(0,1fr)); }
+  .month-view .week-head { display:grid; gap:3px; }
+  .month-view .week-head div { font-size:10px; }
+  .month-view .cell { display:flex; overflow:hidden; }
+  .month-view .cell.empty { display:block; }
+  .month-view .cell.no-slots { display:flex; }
+  .month-view .wd { display:none; }
+  .year-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .month-card { min-height:74px; padding:9px; }
+  .month-name { font-size:12px; }
+  .stats-kpis { gap:6px; }
+  .stats-kpis .kpi:first-child { grid-column:auto; }
+  .kpi-label { font-size:9px; }
+  .stats-detail { scroll-margin-top:16px; }
+  .quick-add { font-size:12px; padding:8px 10px; }
+  .sheet { max-height:90dvh; padding-bottom:calc(20px + env(safe-area-inset-bottom)); }
+  .batch-day { min-height:52px; }
+  .batch-mini-slot { font-size:9px; }
+  .batch-existing-row { grid-template-columns:90px 50px 1fr; font-size:11px; }
+  .batch-publish-bar { padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+  .stats-year-nav { width:auto; }
+  .stats-title { font-size:21px; }
+}
+.chip.upcoming.taken[data-tip=NE] { background:#dcf4e4; border-color:#21834b; color:#174b2d; }
+.chip.upcoming.taken[data-tip=DA] { background:#ede3ff; border-color:#8051bd; color:#4b2873; }
+.chip.upcoming.taken[data-tip=FBX] { background:#ffebc2; border-color:#c77b09; color:#704300; }
+.chip.upcoming.free { background:#e6f7ec; border-color:#21834b; color:#174b2d; }
+.chip.upcoming.mine[data-tip] { background:#2455d9!important; border-color:#12378f; color:#fff; box-shadow:0 2px 6px #2455d930; }
+.chip.upcoming.mine .who { color:#fff; font-weight:700; }
+.chip.past[data-tip],.chip.past.mine[data-tip] { background:#edf0f3!important; color:#667080; border-color:#bac1ca; box-shadow:none; }
+.chip.past .who { color:#667080; }
+.slot-type { display:block; width:max-content; max-width:100%; border-radius:4px; padding:2px 5px; margin-top:4px; font-size:10px; font-weight:800; line-height:1.25; white-space:normal; background:#ffffff99; }
+.chip.mine.upcoming .slot-type { background:#ffffff30; color:#fff; }
+.slot-type[data-kind=NE] { color:#176c36; }
+.slot-type[data-kind=DA] { color:#703aa7; }
+.slot-type[data-kind=FBX] { color:#915805; }
+.chip.past .slot-type { color:#697280; background:#ffffff80; }
+.chip .who { white-space:normal; }
+.legend .legend-types { display:flex; gap:12px; flex-wrap:wrap; }
+.month-view .chip .slot-type { font-size:10px; }
+@media(max-width:720px) {
+  .month-view .chip .who { font-size:9px; line-height:1.3; overflow-wrap:anywhere; }
+  .month-view .chip .slot-type { max-width:100%; }
+  .month-view .cell .empty-day { font-size:10px; }
+}
+.freshness { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin:0 0 12px; color:var(--muted); font-size:12px; min-height:40px; }
+.freshness button { min-height:36px; padding:6px 12px; }
+.stats-modes { margin:16px 0 12px; flex-wrap:wrap; }
+.time-presets { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+.time-presets button { font-size:12px; padding:6px 8px; min-height:36px; }
+.draft-actions { display:flex; align-items:center; justify-content:flex-end; gap:7px; }
+.draft-actions button { min-height:40px; }
+.draft-actions .batch-remove { grid-column:auto; grid-row:auto; }
+.batch-draft-row { grid-template-columns:minmax(120px,1.2fr) 120px minmax(120px,1fr) auto; }
+.day-more { display:none; }
+.type-short { display:none; }
+.month-view .chip .body { min-width:0; flex:1; }
+.sheet .chip { min-height:64px; }
+.sheet .chip .t { font-size:15px; }
+.sheet .chip .who { font-size:14px; }
+.sheet .slot-type { font-size:11px; }
+.stats-kpis .kpi-label { font-size:12px; line-height:1.35; }
+.batch-form-grid input,.admin-form-grid input,.admin-form-grid select { min-height:44px; min-width:0; max-width:100%; }
+.batch-existing-row .time { white-space:normal; }
+.month-card .month-meta { display:block; font-size:10px; margin-top:4px; color:var(--muted); }
+@media(max-width:720px) {
+  .freshness { margin-bottom:10px; font-size:11px; gap:8px; }
+  .freshness button { min-height:40px; }
+  .calendar-tools { margin-bottom:12px; }
+  .month-view .grid { gap:3px; }
+  .month-view .cell { min-height:128px; padding:2px; gap:3px; }
+  .month-view .daynum { min-height:32px; width:100%; padding:3px 0; font-size:13px; text-align:center; }
+  .month-view .chip { min-height:48px; padding:4px 2px; border-left-width:3px; }
+  .month-view .chip .t { font-size:11px; line-height:1.2; white-space:nowrap; overflow-wrap:normal; }
+  .month-view .chip .time-dash { display:none; }
+  .month-view .chip .time-end { display:block; }
+  .month-view .chip .who { display:none; }
+  .month-view .chip .slot-type { font-size:9px; line-height:1.2; padding:2px 0; margin-top:3px; width:100%; text-align:center; white-space:nowrap; overflow-wrap:normal; }
+  .month-view .chip .type-full { display:none; }
+  .month-view .chip .type-short { display:inline; }
+  .month-view .compact-hidden { display:none; }
+  .month-view .day-more { display:block; width:100%; min-height:32px; padding:3px 0; font-size:10px; border:0; background:transparent; color:var(--accent); }
+  .list-view .compact-hidden { display:flex; }
+  .list-view .chip .type-full { display:inline; }
+  .stats-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .stats-kpis .kpi-label { font-size:11px; }
+  .kpi { padding:9px; }
+  .kpi-value { font-size:19px; }
+  .month-card .month-meta { font-size:9px; }
+  .batch-draft-row { grid-template-columns:minmax(0,1fr) auto; gap:5px 10px; }
+  .batch-draft-row .batch-date,.batch-draft-row .batch-time,.batch-draft-row .batch-qty { grid-column:1; }
+  .draft-actions { grid-column:2; grid-row:1/span 3; flex-direction:column; }
+  .draft-actions .batch-remove { width:42px; min-height:40px; }
+  .time-presets button { min-height:44px; }
+  .sheet { padding:18px; }
+  .sheet input,.sheet select { font-size:16px; }
+  .public-note { font-size:12px; }
+}
+@media(max-width:360px) {
+  main { padding:8px; }
+  .panel { padding:8px; }
+  .month-view .grid { gap:2px; }
+  .month-view .chip .t { font-size:10px; }
+  .month-view .chip .slot-type { font-size:8px; }
+  .month-view .cell { padding:1px; }
+  .tabs { gap:12px; }
+  .stats-kpis .kpi-label { font-size:10px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">Razpored<span class="dot">.</span></div>
+    <div class="nav">
+      <button id="prev" class="arrow" title="Prejšnji mesec">‹</button>
+      <div class="month mono" id="monthLbl">—</div>
+      <button id="next" class="arrow" title="Naslednji mesec">›</button>
+      <button id="today" class="ghost">danes</button>
+    </div>
+    <div class="grow"></div>
+    <div class="meter"><span id="cov">0/0</span><span class="track"><span class="fill" id="covfill"></span></span></div>
+    <button id="lockBtn" class="ghost" title="Admin">🔒</button>
+  </div>
+  <div class="namerow">
+    <label for="name">Tvoje ime</label>
+    <input id="name" type="text" autocomplete="name" placeholder="npr. Denis Novak">
+    <span class="hint">Ime se shrani v tej napravi.</span>
+  </div>
+  <div class="tabs">
+    <button data-tab="cal" class="on">Koledar</button>
+    <button data-tab="mine">Moji vpisi</button>
+    <button data-tab="stats">Statistika</button>
+    <button data-tab="admin" id="tabAdmin" style="display:none">Admin</button>
+  </div>
+</header>
+
+<main>
+  <section id="tab-cal" class="panel">
+    <div class="calendar-tools">
+      <label class="hint" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="freeOnly"> Pokaži samo proste termine</label>
+      <div id="calendarAdminTools" class="admin-delete-tools"><span>ADMIN</span><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="deleteModeToggle"> 🗑 Brisanje terminov</label></div>
+    </div>
+    <div class="delete-mode-banner">🗑 Način brisanja je vklopljen. Klik na katerikoli del termina izbriše CEL osnovni termin in vse njegove vpise.</div>
+    <div class="week-head"><div>Pon</div><div>Tor</div><div>Sre</div><div>Čet</div><div>Pet</div><div>Sob</div><div>Ned</div></div>
+    <div id="grid" class="grid"></div>
+    <div class="legend">
+      <span><i style="background:var(--ne)"></i>Navaden</span>
+      <span><i style="background:var(--da)"></i>Administracija</span>
+      <span><i style="background:var(--fbx)"></i>FuzijaBX</span>
+      <span><i style="background:#e0463b"></i>Prosto</span>
+    </div>
+  </section>
+
+  <section id="tab-mine" class="panel" hidden>
+    <div id="mineList" class="list"></div>
+    <div id="mineTotal" class="total"></div>
+  </section>
+
+  <section id="tab-stats" class="panel" hidden>
+    <div class="stats-hero">
+      <div><h2 class="stats-title">Statistika</h2><div class="hint">Pregled opravljenih ur po mesecih</div></div>
+      <div class="stats-year-nav"><button id="statsPrevYear">‹</button><div id="statsYearLbl" class="stats-year mono">—</div><button id="statsNextYear">›</button><button id="statsThisYear" class="ghost">letos</button></div>
+    </div>
+    <div id="statsKpis" class="stats-kpis"></div>
+    <div id="statsYearGrid" class="year-grid"></div>
+    <div id="statsMatrix" class="stats-matrix-wrap"></div>
+    <div id="statsDetail" class="stats-detail"></div>
+    <div id="annualRanking" class="annual-ranking"></div>
+  </section>
+
+  <section id="tab-admin" class="panel" hidden>
+    <div class="admin-head">
+      <div><h3>Admin</h3><div class="hint">Upravljanje osnovnih terminov in vpisov</div></div>
+      <div class="admin-month-box"><div><label class="lab" for="adminMonth">Mesec</label><input type="month" id="adminMonth"></div><button id="adminRefresh">Osveži</button></div>
+    </div>
+    <div class="admin-tabs"><button class="on" data-admin-tab="slots">Termini</button><button data-admin-tab="stats">Statistika</button><button data-admin-tab="add">Dodaj termine</button></div>
+    <div id="admin-view-slots" class="admin-view"><div id="adminSlotsWrap"></div></div>
+    <div id="admin-view-stats" class="admin-view" hidden><div id="adminStatsWrap"></div></div>
+    <div id="admin-view-add" class="admin-view" hidden>
+      <div class="batch-intro">
+        <div><h3>Načrtovalnik terminov</h3><div class="hint">Izberi več dni, pripravi eno ali več časovnih skupin in vse objavi naenkrat.</div></div>
+        <span class="batch-step">1 Izberi dni · 2 Dodaj ure · 3 Objavi</span>
+      </div>
+      <div class="batch-planner">
+        <div class="batch-card">
+          <div class="batch-nav"><button id="batchPrev" class="arrow" title="Prejšnji mesec">‹</button><strong id="batchMonthLabel">—</strong><button id="batchNext" class="arrow" title="Naslednji mesec">›</button><button id="batchToday" class="ghost">danes</button></div>
+          <div class="batch-week"><span>Pon</span><span>Tor</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sob</span><span>Ned</span></div>
+          <div id="batchCalendar" class="batch-calendar"></div>
+          <div class="batch-shortcuts"><button id="batchWeekdays">Izberi delavnike</button><button id="batchRefreshExisting" class="ghost">Osveži prikaz</button><button id="batchClearSelection" class="ghost">Počisti izbor</button></div>
+          <div id="batchExistingSummary" class="batch-existing-summary"></div>
+        </div>
+        <div class="batch-card batch-compose">
+          <div class="batch-compose-title">Nova časovna skupina</div>
+          <div id="batchSelectionSummary" class="batch-selection">Izberi vsaj en dan.</div>
+          <div id="batchSelectedChips" class="batch-selected-chips"></div>
+          <div class="batch-form-grid">
+            <div><label class="lab" for="batchStart">Od</label><input type="time" id="batchStart" value="07:00" step="300"></div>
+            <div><label class="lab" for="batchEnd">Do</label><input type="time" id="batchEnd" value="12:00" step="300"></div>
+            <div><label class="lab" for="batchTip">Tip</label><select id="batchTip"><option value="NE">Navaden</option><option value="DA">Administracija</option><option value="FBX">FuzijaBX</option></select></div>
+            <div><label class="lab" for="batchCopies">Število mest</label><input type="number" id="batchCopies" min="1" max="20" value="1"></div>
+          </div>
+          <button id="batchAddDraft" class="primary batch-add">Dodaj v osnutek</button>
+          <p class="hint batch-help">Po dodajanju se izbor počisti. Za nov termin izberi dneve in nastavi ure. Lahko znova izbereš isti dan.</p>
+        </div>
+      </div>
+      <div class="batch-draft-head"><div><h3>Osnutek objave</h3><div class="hint">Pripravljeni termini ostanejo nespremenjeni, ko zgoraj izbiraš nove dneve in ure.</div></div><span id="batchCount" class="batch-count">0 terminov</span></div>
+      <div id="batchDraftList" class="batch-draft-list"></div>
+      <div class="batch-publish-bar"><div id="batchDraftSummary" class="batch-publish-summary">Osnutek je prazen.</div><button id="batchClearDraft" class="ghost">Počisti osnutek</button><button id="batchPublish" class="primary" disabled>Objavi termine</button></div>
+      <div class="batch-secondary"><span class="hint">Za hiter test lahko dodaš privzete termine tekočega meseca.</span><button id="aSeed">Napolni primer</button></div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:18px 0 12px">
+    <div class="row"><span class="hint">Admin je zaščiten s PIN-om.</span><button id="aLock" class="danger" style="margin-left:auto">Zakleni admin</button></div>
+  </section>
+</main>
+
+<div id="scrim" class="scrim"><div id="sheet" class="sheet"></div></div>
+<div id="msg"></div>
+
+<script>
+// Podatki pridejo iz Apps Script spletne aplikacije prek fetch (brez Google piskotkov),
+// zato stevilo prijavljenih Google racunov v brskalniku ni pomembno.
+var API_URL = 'https://script.google.com/macros/s/AKfycbz09mGkfab3zteXur_IZF5sjty03g6kWQ1tSOWaF6F7Md-yNDpGKE18jCaVObEDUseJ6A/exec';
+function call(method){
+  var args = Array.prototype.slice.call(arguments,1);
+  // text/plain => "preprost" zahtevek brez CORS preflighta, ki ga Apps Script ne podpira.
+  return fetch(API_URL,{
+    method:'POST',
+    credentials:'omit',
+    redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({fn:method,args:args})
+  }).then(function(r){
+    if(!r.ok) throw new Error('Strežnik ni dosegljiv ('+r.status+').');
+    return r.text();
+  }).then(function(t){
+    var d;
+    try{ d=JSON.parse(t); }catch(e){ throw new Error('Nepričakovan odgovor strežnika.'); }
+    if(!d||d.status!=='ok') throw new Error((d&&d.error)||'Napaka strežnika.');
+    return d.result;
+  });
+}
+
+var MONTHS=['januar','februar','marec','april','maj','junij','julij','avgust','september','oktober','november','december'];
+var state={
+  ym:null,name:'',tab:'cal',freeOnly:false,adminPin:'',deleteMode:false,
+  monthCache:{},monthLoading:{},statsCache:{},statsYear:null,statsMonth:null,
+  adminMonth:null,adminTab:'slots',
+  batch:{ym:null,selected:{},draft:[],existingCache:{},existingLoading:{},focusDate:null}
+};
+
+function pad(n){return('0'+n).slice(-2)}
+function ymToday(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)}
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function addMonths(ym,delta){var p=ym.split('-').map(Number),d=new Date(p[0],p[1]-1+delta,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)}
+function monthWindow(ym,r){var a=[];for(var i=-r;i<=r;i++)a.push(addMonths(ym,i));return a}
+function label(ym){var p=ym.split('-');return MONTHS[Number(p[1])-1]+' '+p[0]}
+function shortDate(ds){var p=ds.split('-');return Number(p[2])+'. '+MONTHS[Number(p[1])-1]}
+function dPretty(ds){var p=ds.split('-'),wd=['Ned','Pon','Tor','Sre','Čet','Pet','Sob'][new Date(Number(p[0]),Number(p[1])-1,Number(p[2])).getDay()];return wd+', '+Number(p[2])+'. '+MONTHS[Number(p[1])-1]+' '+p[0]}
+function tipName(t){return t==='DA'?'Administracija':t==='FBX'?'FuzijaBX':'Navaden'}
+function escHtml(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+function hours(a,b){function mm(s){var p=String(s).split(':');return(Number(p[0])||0)*60+(Number(p[1])||0)}return Math.round(((mm(b)-mm(a))/60)*100)/100}
+function loadName(){try{return localStorage.getItem('razpored.ime')||''}catch(e){return''}}
+function saveName(v){try{localStorage.setItem('razpored.ime',v)}catch(e){}}
+function toast(t){var m=document.getElementById('msg');m.textContent=t;m.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(function(){m.classList.remove('on')},2800)}
+
+ 
+function fetchMonths(yms,force){
+  var now=Date.now(),waiting=[],todo=[];Array.from(new Set(yms||[])).forEach(function(ym){if(!force&&state.monthCache[ym]&&now-(state.monthFetchedAt[ym]||0)<60000)return;if(!force&&state.monthLoading[ym])waiting.push(state.monthLoading[ym]);else todo.push(ym)});if(!todo.length)return Promise.all(waiting);
+  var tickets={};todo.forEach(function(ym){tickets[ym]=nextRead('month:'+ym)});
+  var job=call('getCalendarMonths',todo,!!force).then(function(res){if(!res||res.ok===false)throw Error(res&&res.msg||'Mesecev ni mogoče naložiti.');applyClock(res);todo.forEach(function(ym){if(readCurrent('month:'+ym,tickets[ym])&&Object.prototype.hasOwnProperty.call(res.months||{},ym)){state.monthCache[ym]=res.months[ym]||[];state.monthFetchedAt[ym]=Date.now()}})}).finally(function(){todo.forEach(function(ym){if(state.monthLoading[ym]===job)delete state.monthLoading[ym]})});todo.forEach(function(ym){state.monthLoading[ym]=job});return Promise.all(waiting.concat([job]))
+}
+function showCalendarMonth(ym,force){
+  state.ym=ym;var ticket=nextRead('calendar');document.getElementById('monthLbl').textContent=label(ym);if(state.monthCache[ym]){renderCalendar(state.monthCache[ym]);renderMeter(state.monthCache[ym])}else{document.getElementById('grid').innerHTML='<div class="loading" style="grid-column:1/-1">Nalagam…</div>';document.getElementById('cov').textContent='—'}
+  return fetchMonths([ym],force).then(function(){if(!readCurrent('calendar',ticket)||state.ym!==ym)return;renderCalendar(state.monthCache[ym]||[]);renderMeter(state.monthCache[ym]||[]);markFresh(state.monthFetchedAt[ym]);fetchMonths([addMonths(ym,-1),addMonths(ym,1)],false).catch(function(){})}).catch(function(e){if(readCurrent('calendar',ticket)){toast('Osvežitev ni uspela: '+(e.message||e));document.getElementById('lastUpdated').textContent='Prikaz morda ni posodobljen'}})
+}
+function invalidateClientMonths(months){(months||[]).forEach(function(ym){state.monthFetchedAt[ym]=0;state.statsFetchedAt[ym.slice(0,4)]=0;nextRead('month:'+ym);if(state.batch){delete state.batch.existingCache[ym];nextRead('batch:'+ym)}});nextRead('stats')}
+function refreshAfterMutation(res){invalidateClientMonths(res&&res.affectedMonths||[state.ym]);showCalendarMonth(state.ym,true).catch(function(){});if(state.tab==='mine')renderMine();if(state.tab==='stats')loadStatsYear(true).catch(function(){});if(state.tab==='admin')renderAdminCurrent()}
+
+ 
+function renderMeter(slots){var total=0,taken=0;(slots||[]).forEach(function(s){var h=Math.max(0,hours(s.start,s.end));total+=h;if(s.kind==='taken')taken+=h});var text=Math.round(taken*100)/100+' / '+Math.round(total*100)/100+' h';document.getElementById('cov').textContent=text;document.getElementById('cov').title='Vpisane / razpisane ure';document.getElementById('covfill').style.width=total?Math.min(100,taken/total*100)+'%':'0%'}
+function renderCalendar(slots){
+  var panel=document.getElementById('tab-cal');panel.classList.toggle('delete-mode',state.deleteMode);var grid=document.getElementById('grid');grid.innerHTML='';var p=state.ym.split('-').map(Number),y=p[0],m=p[1],firstWD=(new Date(y,m-1,1).getDay()+6)%7,dim=new Date(y,m,0).getDate(),today=todayStr(),WD=['pon','tor','sre','čet','pet','sob','ned'],map={};(slots||[]).forEach(function(s){(map[s.datum]=map[s.datum]||[]).push(s)});for(var i=0;i<firstWD;i++){var blank=document.createElement('div');blank.className='cell empty';grid.appendChild(blank)}
+  for(var day=1;day<=dim;day++){(function(day){var ds=y+'-'+pad(m)+'-'+pad(day),cell=document.createElement('div');cell.className='cell'+(ds===today?' today':'');var head=document.createElement('button');head.className='daynum';head.innerHTML='<span class="wd">'+WD[(new Date(y,m-1,day).getDay()+6)%7]+' </span>'+day;head.setAttribute('aria-label','Vsi termini: '+dPretty(ds));head.onclick=function(){showDay(ds)};cell.appendChild(head);var orig=(map[ds]||[]).slice().sort(function(a,b){return a.start.localeCompare(b.start)||String(a.ime||'').localeCompare(String(b.ime||''))}),items=state.freeOnly?orig.filter(function(s){return s.kind==='free'}):orig;cell.classList.toggle('no-slots',!items.length);
+    if(!items.length){var empty=document.createElement('div');empty.className='empty-day';empty.textContent=state.freeOnly&&orig.length?'Zasedeno':'—';cell.appendChild(empty)}
+    var featured=items.slice().sort(function(a,b){var am=a.kind==='taken'&&!isPastSlot(a)&&String(a.ime).toLowerCase()===state.name.toLowerCase(),bm=b.kind==='taken'&&!isPastSlot(b)&&String(b.ime).toLowerCase()===state.name.toLowerCase();return Number(bm)-Number(am)||a.start.localeCompare(b.start)}).slice(0,2);
+    items.forEach(function(s){var b=chip(s);if(featured.indexOf(s)<0)b.classList.add('compact-hidden');cell.appendChild(b)});if(items.length>2){var more=document.createElement('button');more.className='day-more';more.textContent='+'+(items.length-2)+' več';more.setAttribute('aria-label','Pokaži vseh '+items.length+' terminov: '+dPretty(ds));more.onclick=function(){showDay(ds)};cell.appendChild(more)}grid.appendChild(cell)})(day)}
+}
+function chip(s){var taken=s.kind==='taken',mine=taken&&state.name&&String(s.ime||'').toLowerCase()===state.name.toLowerCase(),ended=isPastSlot(s),b=document.createElement('button');b.className='chip '+(taken?'taken':'free')+(mine?' mine':'')+(ended?' past':' upcoming');b.setAttribute('data-tip',s.tip);var pill=document.createElement('span');pill.className='pill';var body=document.createElement('span');body.className='body';var t=document.createElement('span');t.className='t mono';t.innerHTML='<span class="time-start">'+escHtml(s.start)+'</span><span class="time-dash">–</span><span class="time-end">'+escHtml(s.end)+'</span>';var who=document.createElement('span');who.className='who';who.textContent=taken?(mine?'Moj termin · ':'')+s.ime+(s.ure!=null?' · '+s.ure+' h':''):'Prosto';var type=document.createElement('span');type.className='slot-type';type.dataset.kind=s.tip;type.innerHTML='<span class="type-full">'+escHtml(s.tip==='FBX'?'FBX':tipName(s.tip))+'</span><span class="type-short">'+(s.tip==='DA'?'Admin':s.tip==='FBX'?'FBX':'Nav.')+'</span>';body.appendChild(t);body.appendChild(who);body.appendChild(type);b.appendChild(pill);b.appendChild(body);b.title=dPretty(s.datum)+' · '+s.start+'–'+s.end+' · '+tipName(s.tip)+' · '+who.textContent+(ended?' · Preteklo':'');b.setAttribute('aria-label',b.title);
+  b.onclick=function(){if(state.deleteMode){if(!state.adminPin){toast('Admin ni odklenjen.');return}if(confirm('Izbrišem CEL osnovni termin za '+dPretty(s.datum)+'? Izbrisani bodo tudi njegovi vpisi.')){setBusy(true);call('deleteSlot',s.slotId,state.adminPin).then(function(res){setBusy(false);if(!res||res.ok===false){toast(res&&res.msg||'Napaka.');return}toast('Termin izbrisan.');refreshAfterMutation(res)}).catch(handleErr)}return}openSlot(s)};return b
+}
+function shiftMonth(delta){showCalendarMonth(addMonths(state.ym,delta))}
+
+ 
+function timeEditor(start,end){
+  var wrap=document.createElement('div'),lab=document.createElement('label');lab.className='lab';lab.textContent='Tvoj dejanski čas';
+  var row=document.createElement('div');row.className='row';var od=document.createElement('input');od.type='time';od.step=300;od.value=start;var sep=document.createElement('span');sep.textContent='–';var doo=document.createElement('input');doo.type='time';doo.step=300;doo.value=end;var calc=document.createElement('span');calc.className='hint mono';
+  function upd(){var h=hours(od.value||'0:00',doo.value||'0:00');calc.textContent=h>0?'= '+h+' h':''}od.addEventListener('input',upd);doo.addEventListener('input',upd);upd();row.appendChild(od);row.appendChild(sep);row.appendChild(doo);row.appendChild(calc);wrap.appendChild(lab);wrap.appendChild(row);
+  var hint=document.createElement('div');hint.className='hint';hint.style.marginTop='6px';hint.textContent='Lahko vzameš samo del prostega časa ali svoj vpis podaljšaš prej/pozneje, če se ne prekriva z drugim vpisom istega termina.';wrap.appendChild(hint);
+  return{wrap:wrap,od:function(){return od.value},do:function(){return doo.value}}
+}
+function openSlot(s){
+  var taken=s.kind==='taken',mine=taken&&state.name&&s.ime.toLowerCase()===state.name.toLowerCase(),sheet=document.getElementById('sheet');sheet.innerHTML='';
+  var h=document.createElement('h3');h.textContent=s.start+'–'+s.end+' · '+tipName(s.tip);var sub=document.createElement('div');sub.className='sub';sub.textContent=dPretty(s.datum);sheet.appendChild(h);sheet.appendChild(sub);
+  if(!taken){
+    var ed=timeEditor(s.start,s.end);sheet.appendChild(ed.wrap);addActions(sheet,[{label:'Vpiši se',cls:'primary',fn:function(){if(!state.name){toast('Najprej vpiši svoje ime.');return}runMutation('claim',[s.slotId,state.name,ed.od(),ed.do(),''],'Vpisano.')}},{label:'Zapri',cls:'ghost',fn:closeSheet}]);
+  }else if(mine){
+    var ed2=timeEditor(s.start,s.end);sheet.appendChild(ed2.wrap);addActions(sheet,[{label:'Shrani',cls:'primary',fn:function(){runMutation('claim',[s.slotId,state.name,ed2.od(),ed2.do(),s.signupId],'Posodobljeno.')}},{label:'Odjava',cls:'danger',fn:function(){if(confirm('Se želiš odjaviti s tega vpisa?'))runMutation('cancel',[s.signupId,state.name],'Odjavljeno.')}},{label:'Zapri',cls:'ghost',fn:closeSheet}]);
+  }else{
+    var p=document.createElement('p');p.textContent='Zaseden: '+s.ime+(s.ure!=null?' ('+s.ure+' h)':'');sheet.appendChild(p);addActions(sheet,[{label:'Zapri',cls:'ghost',fn:closeSheet}]);
+  }
+  openScrim();
+}
+function runMutation(method,args,okMsg){setSheetButtonsDisabled(true);call.apply(null,[method].concat(args)).then(function(res){if(!res||res.ok===false){toast((res&&res.msg)||'Napaka.');setSheetButtonsDisabled(false);return}closeSheet();toast(okMsg||'Shranjeno.');refreshAfterMutation(res)}).catch(function(e){toast('Napaka: '+(e&&e.message||e));setSheetButtonsDisabled(false)})}
+
+ 
+function renderMine(){
+  var expectedName=state.name,ticket=nextRead('mine');
+  var box=document.getElementById('mineList'),tot=document.getElementById('mineTotal');box.innerHTML='';tot.textContent='';
+  if(!state.name){box.innerHTML='<p class="hint">Vpiši svoje ime na vrhu.</p>';return}
+  box.innerHTML='<div class="loading">Nalagam…</div>';
+  return call('mySignups',expectedName).then(function(rows){if(!readCurrent('mine',ticket)||state.name!==expectedName)return;markFresh();box.innerHTML='';rows=rows||[];if(!rows.length){box.innerHTML='<p class="hint">Še nimaš vpisanih terminov.</p>';return}var sum=0;rows.forEach(function(s){sum+=Number(s.ure)||hours(s.start,s.end);var it=document.createElement('div');it.className='item';it.setAttribute('data-tip',s.tip);var pill=document.createElement('span');pill.className='pill';var meta=document.createElement('div');meta.className='meta';var d=document.createElement('div');d.className='d';d.textContent=dPretty(s.datum);var sl=document.createElement('div');sl.className='s mono';sl.textContent=s.start+'–'+s.end+' · '+s.ure+' h';meta.appendChild(d);meta.appendChild(sl);var edit=document.createElement('button');edit.textContent='Uredi';edit.onclick=function(){openSlot({kind:'taken',slotId:s.slotId,signupId:s.signupId,datum:s.datum,start:s.start,end:s.end,tip:s.tip,ime:s.ime,ure:s.ure})};it.appendChild(pill);it.appendChild(meta);it.appendChild(edit);box.appendChild(it)});tot.textContent='Vse vpisane ure: '+(Math.round(sum*100)/100)+' h'}).catch(function(e){if(readCurrent('mine',ticket))toast('Moje ure: '+(e.message||e))})
+}
+
+ 
+function loadStatsYear(force){var y=String(state.statsYear),ticket=nextRead('stats');document.getElementById('statsYearLbl').textContent=y;var cached=state.statsCache[y];if(cached){if(!state.statsMonth||state.statsMonth.slice(0,4)!==y){var cur=ymToday(),last=(cached.months||[]).slice().reverse().find(function(m){return m.count>0});state.statsMonth=cur.slice(0,4)===y?cur:(last?last.ym:y+'-01')}renderStatsDashboard(cached);markFresh(state.statsFetchedAt[y])}else{document.getElementById('statsYearGrid').innerHTML='<div class="loading" style="grid-column:1/-1">Nalagam statistiko…</div>';['statsKpis','statsDetail','statsMatrix','annualRanking'].forEach(function(id){document.getElementById(id).innerHTML=''})}if(!force&&cached&&Date.now()-(state.statsFetchedAt[y]||0)<60000)return Promise.resolve(cached);
+  return call('publicStatsYear',y,!!force).then(function(res){if(!res||res.ok===false)throw Error(res&&res.msg||'Statistike ni mogoče naložiti.');if(!readCurrent('stats',ticket)||String(state.statsYear)!==y)return;applyClock(res);state.statsCache[y]=res;state.statsFetchedAt[y]=Date.now();if(!state.statsMonth||state.statsMonth.slice(0,4)!==y){var cur=ymToday(),last=(res.months||[]).slice().reverse().find(function(m){return m.count>0});state.statsMonth=cur.slice(0,4)===y?cur:(last?last.ym:y+'-01')}renderStatsDashboard(res);markFresh();return res}).catch(function(e){if(readCurrent('stats',ticket)){toast('Statistika: '+(e.message||e));document.getElementById('lastUpdated').textContent='Statistika morda ni posodobljena'}})
+}
+function renderStatsDashboard(raw){var data=statsProjection(raw,state.statsMode),a=raw.annual||{},scope=statsScopeLabel();document.querySelectorAll('[data-stats-mode]').forEach(function(b){var on=b.dataset.statsMode===state.statsMode;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});document.getElementById('statsKpis').innerHTML=[['Pretekle ure',a.past],['Načrtovane ure',a.planned],['Vse vpisane ure',a.total]].map(function(k){return '<div class="kpi"><div class="kpi-label">'+k[0]+' · '+escHtml(raw.year)+'</div><div class="kpi-value mono">'+escHtml(k[1]||0)+' h</div></div>'}).join('');var grid=document.getElementById('statsYearGrid');grid.innerHTML='';(data.months||[]).forEach(function(m){var card=document.createElement('button');card.className='month-card'+(m.ym===state.statsMonth?' selected':'')+(m.ym===ymToday()?' current':'');card.setAttribute('aria-pressed',m.ym===state.statsMonth);card.setAttribute('aria-label',label(m.ym)+', '+scope+', '+m.total+' ur');card.innerHTML='<div class="month-name">'+escHtml(MONTHS[m.month-1])+'</div><div class="month-hours mono">'+m.total+' <small>h</small></div><div class="month-meta">'+m.count+' vpisov · '+m.peopleCount+' oseb</div>';card.onclick=function(){state.statsMonth=m.ym;renderStatsDashboard(raw);document.getElementById('statsDetail').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})};grid.appendChild(card)});
+  function peopleList(bucket,ym){var list=document.createElement('div');list.className='stat-person-list';(bucket.people||[]).forEach(function(p){var r=document.createElement('button');r.className='stat-person';r.innerHTML='<div class="stat-person-name">'+escHtml(p.ime)+'</div><div class="stat-person-count">'+p.count+' vpisov</div><div class="stat-person-hours mono">'+p.ure+' h <span aria-hidden="true">›</span></div>';r.setAttribute('aria-label',p.ime+', '+p.ure+' ur; pokaži datume');r.onclick=function(){showPersonDates(p.ime,ym)};list.appendChild(r)});return list}
+  var month=data.months.find(function(m){return m.ym===state.statsMonth}),detail=document.getElementById('statsDetail');detail.innerHTML='';if(month){detail.innerHTML='<div class="stats-detail-head"><div><h3>'+escHtml(label(month.ym))+'</h3><div class="hint">'+scope+' · '+month.count+' vpisov · '+month.peopleCount+' oseb</div></div><div class="kpi-value mono" style="font-size:23px">'+month.total+' h</div></div>';if(!month.people.length)detail.innerHTML+='<p class="hint">Za izbrani prikaz ni vpisov.</p>';else detail.appendChild(peopleList(month,month.ym))}
+  var annual=document.getElementById('annualRanking');annual.innerHTML='<h3>'+scope+' v '+escHtml(data.year)+'</h3>';annual.appendChild(peopleList(data.annual,String(data.year)));renderStatsMatrix(data)
+}
+function renderStatsMatrix(data){
+  var wrap=document.getElementById('statsMatrix');wrap.innerHTML='';
+  var people=(data.annual&&data.annual.people)||[],months=data.months||[];
+  var title=document.createElement('div');title.className='stats-matrix-title';title.innerHTML='<div><h3>Ure po osebah in mesecih</h3><div class="hint">Celotno leto na enem mestu</div></div><span class="hint">Pomakni tabelo levo/desno</span>';wrap.appendChild(title);
+  if(!people.length){var empty=document.createElement('div');empty.className='batch-empty';empty.textContent='Za izbrani prikaz ni vpisov.';wrap.appendChild(empty);return}
+  var table=document.createElement('table');table.className='stats-matrix';
+  var thead=document.createElement('thead'),hr=document.createElement('tr'),nameTh=document.createElement('th');nameTh.textContent='Oseba';hr.appendChild(nameTh);
+  months.forEach(function(m){var th=document.createElement('th');th.textContent=MONTHS[m.month-1].slice(0,3);th.title=label(m.ym);hr.appendChild(th)});
+  var totalTh=document.createElement('th');totalTh.textContent='Skupaj';hr.appendChild(totalTh);thead.appendChild(hr);table.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  people.forEach(function(person){var tr=document.createElement('tr'),name=document.createElement('td');name.textContent=person.ime;tr.appendChild(name);var key=person.ime.toLowerCase();
+    months.forEach(function(m){var found=(m.people||[]).find(function(p){return p.ime.toLowerCase()===key}),td=document.createElement('td'),value=found?found.ure:0;td.textContent=value?value+' h':'—';if(!value)td.className='zero';tr.appendChild(td)});
+    var total=document.createElement('td');total.textContent=person.ure+' h';tr.appendChild(total);tbody.appendChild(tr)});
+  table.appendChild(tbody);wrap.appendChild(table);
+}
+function shiftStatsYear(delta){state.statsYear=Number(state.statsYear)+delta;state.statsMonth=null;loadStatsYear(false)}
+
+ 
+function openAdminUnlock(){
+  var sheet=document.getElementById('sheet');sheet.innerHTML='';var h=document.createElement('h3');h.textContent='Admin dostop';var sub=document.createElement('div');sub.className='sub';sub.textContent='Vpiši admin PIN.';var inp=document.createElement('input');inp.type='password';inp.inputMode='numeric';inp.placeholder='PIN';inp.style.width='100%';sheet.appendChild(h);sheet.appendChild(sub);sheet.appendChild(inp);
+  function unlock(){var pin=inp.value.trim();if(!pin){toast('Vpiši PIN.');return}setSheetButtonsDisabled(true);call('checkPin',pin).then(function(res){if(res&&res.ok){unlockAdmin(pin);closeSheet();toast('Admin odklenjen.')}else{toast((res&&res.msg)||'Napačen PIN.');setSheetButtonsDisabled(false)}}).catch(handleErr)}
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')unlock()});addActions(sheet,[{label:'Odkleni',cls:'primary',fn:unlock},{label:'Zapri',cls:'ghost',fn:closeSheet}]);openScrim();setTimeout(function(){inp.focus()},50)
+}
+function unlockAdmin(pin){state.adminPin=pin;document.getElementById('quickAdd').hidden=false;state.adminMonth=state.adminMonth||state.ym;try{localStorage.setItem('razpored.pin',pin)}catch(e){}document.getElementById('tabAdmin').style.display='';document.getElementById('calendarAdminTools').classList.add('on');document.getElementById('adminMonth').value=state.adminMonth}
+function lockAdmin(){document.getElementById('quickAdd').hidden=true;state.adminPin='';state.deleteMode=false;try{localStorage.removeItem('razpored.pin')}catch(e){}document.getElementById('tabAdmin').style.display='none';document.getElementById('calendarAdminTools').classList.remove('on');document.getElementById('deleteModeToggle').checked=false;renderCalendar(state.monthCache[state.ym]||[]);if(state.tab==='admin')showTab('cal');toast('Admin zaklenjen.')}
+
+ 
+function setAdminTab(tab){state.adminTab=tab;document.querySelectorAll('[data-admin-tab]').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-admin-tab')===tab)});['slots','stats','add'].forEach(function(n){document.getElementById('admin-view-'+n).hidden=n!==tab});renderAdminCurrent()}
+function renderAdminCurrent(force){if(!state.adminPin)return Promise.resolve();if(state.adminTab==='slots')return renderAdminSlots();if(state.adminTab==='stats')return renderAdminStats();if(state.adminTab==='add')return renderBatchPlanner(force)}
+function renderAdminSlots(){
+  var expectedMonth=state.adminMonth,expectedPin=state.adminPin,ticket=nextRead('adminSlots');
+  var wrap=document.getElementById('adminSlotsWrap');wrap.innerHTML='<div class="loading">Nalagam…</div>';
+  return call('adminGetMonth',expectedMonth,expectedPin).then(function(res){if(!readCurrent('adminSlots',ticket)||state.adminMonth!==expectedMonth||state.adminPin!==expectedPin)return;if(res&&res.ok!==false)markFresh();if(!res||res.ok===false){wrap.innerHTML='<p class="hint">'+escHtml((res&&res.msg)||'Napaka.')+'</p>';return}var rows=res.rows||[],free=rows.filter(function(r){return r.status==='PROST'}).length,partial=rows.filter(function(r){return r.status==='DELNO'}).length,taken=rows.filter(function(r){return r.status==='ZASEDEN'}).length;wrap.innerHTML='<div class="admin-summary-bar"><div class="admin-kpi"><div class="k">Vsi termini</div><div class="v mono">'+rows.length+'</div></div><div class="admin-kpi"><div class="k">Prosti</div><div class="v mono">'+free+'</div></div><div class="admin-kpi"><div class="k">Delno</div><div class="v mono">'+partial+'</div></div><div class="admin-kpi"><div class="k">Zasedeni</div><div class="v mono">'+taken+'</div></div></div>';if(!rows.length){wrap.innerHTML+='<p class="hint">Ta mesec ni terminov.</p>';return}var list=document.createElement('div');list.className='admin-slot-list';var head=document.createElement('div');head.className='admin-slot admin-slot-head';head.innerHTML='<div>Datum</div><div>Osnovni čas</div><div>Tip</div><div>Vpisi</div><div>Prosto</div><div>Status</div><div></div>';list.appendChild(head);rows.forEach(function(s){var row=document.createElement('div');row.className='admin-slot';row.innerHTML='<div class="date">'+escHtml(shortDate(s.datum))+'</div><div class="time mono">'+escHtml(s.start+'–'+s.end)+'</div><div class="type"><span class="type-badge '+escHtml(s.tip)+'">'+escHtml(tipName(s.tip))+'</span></div><div class="person">'+escHtml(s.peopleText||'—')+'</div><div class="hours mono">'+s.freeHours+' h</div><div class="state"><span class="status '+escHtml(s.status)+'">'+escHtml(s.status)+'</span></div>';var editWrap=document.createElement('div');editWrap.className='edit';var edit=document.createElement('button');edit.textContent='Uredi';edit.onclick=function(){openAdminSlotEditor(s)};editWrap.appendChild(edit);row.appendChild(editWrap);list.appendChild(row)});wrap.appendChild(list)}).catch(function(e){if(readCurrent('adminSlots',ticket)&&state.adminMonth===expectedMonth&&state.adminPin===expectedPin){wrap.innerHTML='<p class="hint">Podatkov ni mogoče osvežiti.</p>';toast(e.message||'Napaka pri osvežitvi.')}})
+}
+function renderAdminStats(){
+  var expectedMonth=state.adminMonth,expectedPin=state.adminPin,ticket=nextRead('adminStats');
+  var wrap=document.getElementById('adminStatsWrap');wrap.innerHTML='<div class="loading">Nalagam…</div>';
+  return call('summary',expectedMonth,expectedPin).then(function(res){if(!readCurrent('adminStats',ticket)||state.adminMonth!==expectedMonth||state.adminPin!==expectedPin)return;if(res&&res.ok!==false)markFresh();if(!res||res.ok===false){wrap.innerHTML='<p class="hint">'+escHtml((res&&res.msg)||'Napaka.')+'</p>';return}wrap.innerHTML='<div class="admin-summary-bar"><div class="admin-kpi"><div class="k">Mesec</div><div class="v" style="font-size:15px">'+escHtml(label(state.adminMonth))+'</div></div><div class="admin-kpi"><div class="k">Ure</div><div class="v mono">'+res.total+' h</div></div><div class="admin-kpi"><div class="k">Vpisi</div><div class="v mono">'+res.totalCount+'</div></div></div>';if(!(res.rows||[]).length){wrap.innerHTML+='<p class="hint">Ni vpisanih ur.</p>';return}var tbl=document.createElement('table');tbl.className='sum';tbl.innerHTML='<thead><tr><th>Oseba</th><th class="num">Vpisi</th><th class="num">Ure</th></tr></thead>';var body=document.createElement('tbody');res.rows.forEach(function(r){var tr=document.createElement('tr');tr.innerHTML='<td>'+escHtml(r.ime)+'</td><td class="num mono">'+r.count+'</td><td class="num mono">'+r.ure+' h</td>';body.appendChild(tr)});tbl.appendChild(body);wrap.appendChild(tbl)}).catch(function(e){if(readCurrent('adminStats',ticket)&&state.adminMonth===expectedMonth&&state.adminPin===expectedPin){wrap.innerHTML='<p class="hint">Podatkov ni mogoče osvežiti.</p>';toast(e.message||'Napaka pri osvežitvi.')}})
+}
+
+ 
+function adminField(text,type,value){var wrap=document.createElement('div'),lab=document.createElement('label');lab.className='lab';lab.textContent=text;var inp=document.createElement('input');inp.setAttribute('aria-label',text);inp.type=type;inp.value=value||'';inp.style.width='100%';if(type==='time')inp.step=300;wrap.appendChild(lab);wrap.appendChild(inp);return{wrap:wrap,input:inp}}
+function openAdminSlotEditor(s){
+  var sheet=document.getElementById('sheet');sheet.innerHTML='';var h=document.createElement('h3');h.textContent='Uredi osnovni termin';var sub=document.createElement('div');sub.className='sub';sub.textContent=dPretty(s.datum)+' · '+s.signupCount+' vpisov';sheet.appendChild(h);sheet.appendChild(sub);
+  var grid=document.createElement('div');grid.className='admin-form-grid';var date=adminField('Datum','date',s.datum),od=adminField('Od','time',s.start),doo=adminField('Do','time',s.end),typeWrap=document.createElement('div'),typeLab=document.createElement('label');typeLab.className='lab';typeLab.textContent='Tip';var type=document.createElement('select');[['NE','Navaden'],['DA','Administracija'],['FBX','FuzijaBX']].forEach(function(o){var opt=document.createElement('option');opt.value=o[0];opt.textContent=o[1];opt.selected=o[0]===s.tip;type.appendChild(opt)});typeWrap.appendChild(typeLab);typeWrap.appendChild(type);grid.appendChild(date.wrap);grid.appendChild(typeWrap);grid.appendChild(od.wrap);grid.appendChild(doo.wrap);sheet.appendChild(grid);
+  var save=document.createElement('button');save.className='primary';save.textContent='Shrani osnovni termin';save.style.marginTop='12px';save.style.width='100%';save.onclick=function(){setSheetButtonsDisabled(true);call('adminUpdateSlot',s.id,{datum:date.input.value,start:od.input.value,end:doo.input.value,tip:type.value},state.adminPin).then(function(res){if(!res||res.ok===false){toast((res&&res.msg)||'Napaka.');setSheetButtonsDisabled(false);return}closeSheet();toast('Termin posodobljen.');refreshAfterMutation(res)}).catch(handleErr)};sheet.appendChild(save);
+
+  var sr=document.createElement('div');sr.className='section-title-row';var st=document.createElement('strong');st.textContent='Vpisi v tem terminu';var add=document.createElement('button');add.textContent='+ Dodaj vpis';add.onclick=function(){openAdminSignupEditor(s,null)};sr.appendChild(st);sr.appendChild(add);sheet.appendChild(sr);
+  var list=document.createElement('div');list.className='signup-admin-list';if(!(s.signups||[]).length){list.innerHTML='<div class="hint">Ni vpisov — cel osnovni termin je prost.</div>'}else{s.signups.forEach(function(v){var r=document.createElement('div');r.className='signup-admin-row';r.innerHTML='<div class="who">'+escHtml(v.ime)+'</div><div class="time mono">'+escHtml(v.start+'–'+v.end)+'</div><div class="hours mono">'+v.ure+' h</div>';var ew=document.createElement('div');ew.className='edit';var eb=document.createElement('button');eb.textContent='Uredi';eb.onclick=function(){openAdminSignupEditor(s,v)};ew.appendChild(eb);r.appendChild(ew);list.appendChild(r)})}sheet.appendChild(list);
+
+  var actions=[];if((s.signups||[]).length)actions.push({label:'Sprosti cel termin',cls:'ghost',fn:function(){if(confirm('Pobrišem VSE vpise tega termina, osnovni termin pa ostane?'))adminDirectMutation('adminClearSlot',[s.id,state.adminPin],'Termin sproščen.')}});actions.push({label:'Izbriši termin',cls:'danger',fn:function(){if(confirm('Trajno izbrišem osnovni termin in VSE njegove vpise?'))adminDirectMutation('deleteSlot',[s.id,state.adminPin],'Termin izbrisan.')}},{label:'Zapri',cls:'ghost',fn:closeSheet});addActions(sheet,actions);openScrim()
+}
+function openAdminSignupEditor(slot,signup){
+  var sheet=document.getElementById('sheet');sheet.innerHTML='';var editing=!!signup,h=document.createElement('h3');h.textContent=editing?'Uredi vpis':'Dodaj vpis';var sub=document.createElement('div');sub.className='sub';sub.textContent=dPretty(slot.datum)+' · osnovni termin '+slot.start+'–'+slot.end;sheet.appendChild(h);sheet.appendChild(sub);
+  var name=adminField('Ime','text',editing?signup.ime:''),od=adminField('Od','time',editing?signup.start:slot.start),doo=adminField('Do','time',editing?signup.end:slot.end);name.wrap.classList.add('wide');var grid=document.createElement('div');grid.className='admin-form-grid';grid.appendChild(name.wrap);grid.appendChild(od.wrap);grid.appendChild(doo.wrap);sheet.appendChild(grid);
+  var acts=[{label:'Shrani',cls:'primary',fn:function(){var data={ime:name.input.value.trim(),start:od.input.value,end:doo.input.value};setSheetButtonsDisabled(true);var method=editing?'adminUpdateSignup':'adminAddSignup',args=editing?[signup.id,data,state.adminPin]:[slot.id,data,state.adminPin];call.apply(null,[method].concat(args)).then(function(res){if(!res||res.ok===false){toast((res&&res.msg)||'Napaka.');setSheetButtonsDisabled(false);return}closeSheet();toast(editing?'Vpis posodobljen.':'Vpis dodan.');refreshAfterMutation(res)}).catch(handleErr)}}];
+  if(editing)acts.push({label:'Izbriši vpis',cls:'danger',fn:function(){if(confirm('Izbrišem samo ta vpis?'))adminDirectMutation('adminDeleteSignup',[signup.id,state.adminPin],'Vpis izbrisan.')}});acts.push({label:'Zapri',cls:'ghost',fn:closeSheet});addActions(sheet,acts);openScrim()
+}
+function adminDirectMutation(method,args,msg){setSheetButtonsDisabled(true);call.apply(null,[method].concat(args)).then(function(res){if(!res||res.ok===false){toast((res&&res.msg)||'Napaka.');setSheetButtonsDisabled(false);return}closeSheet();toast(msg);refreshAfterMutation(res)}).catch(handleErr)}
+
+ 
+function addActions(sheet,list){var wrap=document.createElement('div');wrap.className='actions';list.forEach(function(a){var b=document.createElement('button');b.textContent=a.label;if(a.cls)b.className=a.cls;b.onclick=a.fn;wrap.appendChild(b)});sheet.appendChild(wrap)}
+function setSheetButtonsDisabled(disabled){state.sheetBusy=disabled;document.querySelectorAll('#sheet button').forEach(function(b){if(disabled){if(!b.hasAttribute('data-was-disabled'))b.dataset.wasDisabled=b.disabled?'1':'0';b.disabled=true;if(b.classList.contains('primary')&&!b.dataset.idleText){b.dataset.idleText=b.textContent;b.textContent='Shranjujem…'}}else{if(b.hasAttribute('data-was-disabled'))b.disabled=b.dataset.wasDisabled==='1';delete b.dataset.wasDisabled;if(b.dataset.idleText){b.textContent=b.dataset.idleText;delete b.dataset.idleText}}})}
+function setBusy(disabled){document.querySelectorAll('button').forEach(function(b){if(disabled){if(!b.hasAttribute('data-global-disabled'))b.dataset.globalDisabled=b.disabled?'1':'0';b.disabled=true}else if(b.hasAttribute('data-global-disabled')){b.disabled=b.dataset.globalDisabled==='1';delete b.dataset.globalDisabled}});if(!disabled&&state.batch.loaded)syncBatchControls()}
+function openScrim(){var scrim=document.getElementById('scrim'),sheet=document.getElementById('sheet');if(!scrim.classList.contains('on'))state.returnFocus=document.activeElement;state.sheetBusy=false;scrim.classList.add('on');sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.tabIndex=-1;var heading=sheet.querySelector('h3');if(heading){heading.id='sheetTitle';sheet.setAttribute('aria-labelledby','sheetTitle')}document.querySelector('header').inert=true;document.querySelector('main').inert=true;setTimeout(function(){var target=sheet.querySelector('input,select,button:not(:disabled)');(target||sheet).focus()},0)}
+function closeSheet(){document.getElementById('scrim').classList.remove('on');state.sheetBusy=false;document.querySelector('header').inert=false;document.querySelector('main').inert=false;var focus=state.returnFocus;if(focus&&focus.isConnected)focus.focus();state.returnFocus=null}
+function handleErr(e){setBusy(false);setSheetButtonsDisabled(false);toast('Napaka: '+(e&&e.message||e))}
+document.getElementById('scrim').addEventListener('click',function(e){if(e.target.id==='scrim'&&!state.sheetBusy)closeSheet()});
+
+ 
+function ensureBatchState(){if(state.batch.loaded)return;state.batch.loaded=true;try{var saved=JSON.parse(localStorage.getItem('razpored.batch')||'null');if(saved&&typeof saved==='object'){state.batch.ym=/^\d{4}-(0[1-9]|1[0-2])$/.test(saved.ym||'')?saved.ym:null;state.batch.selected={};Object.keys(saved.selected||{}).forEach(function(ds){if(/^\d{4}-\d{2}-\d{2}$/.test(ds)&&saved.selected[ds])state.batch.selected[ds]=true});state.batch.draft=Array.isArray(saved.draft)?saved.draft.filter(function(x){return x&&x.datum&&x.start&&x.end&&x.tip}):[];if(saved.pending&&Array.isArray(saved.pending.items)&&saved.pending.requestId)state.batch.pending=saved.pending}}catch(e){}state.batch.draft.forEach(function(x){if(!x.clientId)x.clientId=newDraftId()});state.batch.ym=state.batch.ym||state.adminMonth||state.ym||ymToday()}
+function saveBatchState(){try{localStorage.setItem('razpored.batch',JSON.stringify({ym:state.batch.ym,selected:state.batch.selected,draft:state.batch.draft,pending:state.batch.pending||null}));return true}catch(e){if(!state.storageWarned){state.storageWarned=true;toast('Brskalnik'+' ne more shraniti osnutka. Pusti to stran odprto.')}return false}}
+function termCountLabel(n){return n===1?'1 termin':n===2?'2 termina':(n===3||n===4?n+' termini':n+' terminov')}
+function batchTinyTime(v){v=String(v||'');return /:00$/.test(v)?v.slice(0,2):v}
+function batchMiniPeople(slot){var names=(slot.signups||[]).map(function(s){return String(s.ime||'').trim().split(/\s+/)[0]}).filter(Boolean);if(!names.length)return'Prosto';return names.slice(0,2).join(', ')+(names.length>2?' +'+(names.length-2):'')}
+function batchStatusLabel(status){return status==='ZASEDEN'?'Polno':status==='DELNO'?'Delno':'Prosto'}
+function loadBatchExisting(force){ensureBatchState();var ym=state.batch.ym,pin=state.adminPin;if(!pin)return Promise.resolve();if(!force&&state.batch.existingCache[ym]&&Date.now()-(state.batch.existingAt[ym]||0)<60000){renderBatchCalendar();return Promise.resolve()}if(!force&&state.batch.existingLoading[ym])return state.batch.existingLoading[ym];var ticket=nextRead('batch:'+ym);state.batch.existingError='';var job=call('adminGetMonth',ym,pin).then(function(res){if(!readCurrent('batch:'+ym,ticket)||pin!==state.adminPin)return;if(!res||res.ok===false)throw Error(res&&res.msg||'Terminov ni mogoče prebrati.');var byDate={};(res.rows||[]).forEach(function(row){(byDate[row.datum]=byDate[row.datum]||[]).push(row)});state.batch.existingCache[ym]=byDate;state.batch.existingAt[ym]=Date.now();if(state.batch.ym===ym){state.batch.existingError='';markFresh()}}).catch(function(e){if(readCurrent('batch:'+ym,ticket)&&state.batch.ym===ym)state.batch.existingError=e.message||String(e)}).finally(function(){if(state.batch.existingLoading[ym]===job)delete state.batch.existingLoading[ym];if(state.batch.ym===ym)renderBatchCalendar()});state.batch.existingLoading[ym]=job;renderBatchCalendar();return job}
+function renderBatchPlanner(force){ensureBatchState();renderBatchCalendar();renderBatchDraft();return loadBatchExisting(!!force)}
+function batchShiftMonth(delta){ensureBatchState();state.batch.ym=addMonths(state.batch.ym,delta);state.batch.focusDate=null;saveBatchState();renderBatchCalendar();loadBatchExisting(false)}
+function renderBatchCalendar(){
+  ensureBatchState();var ym=state.batch.ym,p=ym.split('-').map(Number),y=p[0],m=p[1],first=(new Date(y,m-1,1).getDay()+6)%7,dim=new Date(y,m,0).getDate(),today=todayStr(),grid=document.getElementById('batchCalendar'),existing=state.batch.existingCache[ym]||{};
+  document.getElementById('batchMonthLabel').textContent=label(ym);grid.innerHTML='';
+  for(var i=0;i<first;i++){var blank=document.createElement('span');blank.className='batch-blank';grid.appendChild(blank)}
+  for(var day=1;day<=dim;day++){
+    (function(d){var ds=y+'-'+pad(m)+'-'+pad(d),rows=existing[ds]||[],btn=document.createElement('button');btn.type='button';btn.className='batch-day'+(state.batch.selected[ds]?' selected':'')+(ds===today?' today':'')+(state.batch.draft.some(function(x){return x.datum===ds})?' in-draft':'')+(rows.length?' has-existing':'');
+      var num=document.createElement('span');num.className='batch-day-number';num.textContent=d;btn.appendChild(num);
+      if(rows.length){var count=document.createElement('span');count.className='batch-day-count';count.textContent=rows.length;btn.appendChild(count);var slots=document.createElement('span');slots.className='batch-day-slots';rows.slice(0,2).forEach(function(s){var line=document.createElement('span');line.className='batch-mini-slot '+s.status;line.textContent=batchTinyTime(s.start)+'–'+batchTinyTime(s.end)+' · '+batchMiniPeople(s);line.title=s.start+'–'+s.end+' · '+(s.peopleText||'Prosto');slots.appendChild(line)});if(rows.length>2){var more=document.createElement('span');more.className='batch-more-slots';more.textContent='+'+(rows.length-2)+' več';slots.appendChild(more)}btn.appendChild(slots)}
+      var detail=rows.map(function(s){return s.start+'–'+s.end+' '+(s.peopleText||'Prosto')}).join('; ');btn.setAttribute('aria-label',dPretty(ds)+(state.batch.selected[ds]?', izbrano':'')+(detail?'. Termini: '+detail:''));btn.onclick=function(){if(!batchEditable())return;state.batch.focusDate=ds;if(state.batch.selected[ds])delete state.batch.selected[ds];else state.batch.selected[ds]=true;saveBatchState();renderBatchCalendar()};grid.appendChild(btn)})(day)
+  }
+  renderBatchSelection();renderBatchExistingSummary();syncBatchControls();
+}
+function renderBatchExistingSummary(){
+  var box=document.getElementById('batchExistingSummary'),ym=state.batch.ym,selected=Object.keys(state.batch.selected).filter(function(ds){return state.batch.selected[ds]&&ds.slice(0,7)===ym}).sort(),focus=(state.batch.focusDate&&state.batch.focusDate.slice(0,7)===ym)?state.batch.focusDate:(selected[0]||(ym===ymToday()?todayStr():ym+'-01')),cache=state.batch.existingCache[ym],rows=cache&&cache[focus]||[];box.innerHTML='';
+  var head=document.createElement('div');head.className='batch-existing-summary-head';var title=document.createElement('strong');title.textContent='Že objavljeno · '+dPretty(focus);var meta=document.createElement('span');meta.textContent=cache?termCountLabel(rows.length):'nalagam';head.appendChild(title);head.appendChild(meta);box.appendChild(head);
+  if(state.batch.existingLoading[ym]&&!cache){var loading=document.createElement('div');loading.className='batch-existing-loading';loading.textContent='Preverjam že dodane termine…';box.appendChild(loading);return}if(state.batch.existingError){var err=document.createElement('div');err.className='batch-existing-empty';err.textContent=state.batch.existingError;box.appendChild(err);return}if(!rows.length){var empty=document.createElement('div');empty.className='batch-existing-empty';empty.textContent='Ta dan še nima objavljenih terminov.';box.appendChild(empty);return}
+  var list=document.createElement('div');list.className='batch-existing-list';rows.forEach(function(s){var row=document.createElement('div');row.className='batch-existing-row '+s.status;var time=document.createElement('div');time.className='time mono';time.textContent=s.start+'–'+s.end;var status=document.createElement('div');status.className='status-text';status.textContent=batchStatusLabel(s.status);var people=document.createElement('div');people.className='people';var signups=(s.signups||[]).map(function(p){return p.ime+' '+p.start+'–'+p.end});people.textContent=signups.length?signups.join(', '):'Brez vpisa';people.title=people.textContent;row.appendChild(time);row.appendChild(status);row.appendChild(people);list.appendChild(row)});box.appendChild(list)
+}
+function renderBatchSelection(){
+  var dates=Object.keys(state.batch.selected).filter(function(ds){return state.batch.selected[ds]}).sort(),summary=document.getElementById('batchSelectionSummary'),chips=document.getElementById('batchSelectedChips');
+  summary.textContent=dates.length?'Izbrano: '+dates.length+(dates.length===1?' dan':' dni')+'. Dodaj čas za vse izbrane dni.':'Izberi vsaj en dan.';chips.innerHTML='';
+  dates.slice(0,9).forEach(function(ds){var chip=document.createElement('span');chip.textContent=shortDate(ds);chips.appendChild(chip)});if(dates.length>9){var more=document.createElement('span');more.textContent='+'+(dates.length-9);chips.appendChild(more)}
+}
+function batchSelectWorkdays(){
+  ensureBatchState();if(!batchEditable())return;var p=state.batch.ym.split('-').map(Number),dim=new Date(p[0],p[1],0).getDate();for(var d=1;d<=dim;d++){var wd=new Date(p[0],p[1]-1,d).getDay();if(wd!==0&&wd!==6)state.batch.selected[p[0]+'-'+pad(p[1])+'-'+pad(d)]=true}saveBatchState();renderBatchCalendar()
+}
+function batchClearSelection(){if(!batchEditable())return;state.batch.selected={};saveBatchState();renderBatchCalendar()}
+function batchKey(x){return [x.datum,x.start,x.end,x.tip].join('|')}
+function batchAddToDraft(){ensureBatchState();if(!batchEditable())return;var dates=Object.keys(state.batch.selected).filter(function(ds){return state.batch.selected[ds]}).sort(),start=document.getElementById('batchStart').value,end=document.getElementById('batchEnd').value,tip=document.getElementById('batchTip').value,copies=Number(document.getElementById('batchCopies').value);if(!dates.length){toast('Najprej izberi vsaj en dan.');return}if(!Number.isInteger(copies)||copies<1||copies>20||dates.some(function(ds){return !validDraftItem({datum:ds,start:start,end:end,tip:tip})})){toast('Preveri čas in celo število mest od 1 do 20.');return}var added=0;dates.forEach(function(ds){var probe={datum:ds,start:start,end:end,tip:tip},existing=state.batch.draft.filter(function(x){return batchKey(x)===batchKey(probe)}).length;for(var c=existing;c<copies;c++){state.batch.draft.push(Object.assign({clientId:newDraftId()},probe));added++}});if(!added){toast('Ta skupina je že v osnutku. Za spremembo uporabi Uredi.');return}state.batch.draft.sort(function(a,b){return batchKey(a).localeCompare(batchKey(b))});state.batch.selected={};saveBatchState();renderBatchCalendar();renderBatchDraft();toast('Dodano v osnutek. Izbor je prazen za naslednjo skupino.')}
+function renderBatchDraft(){ensureBatchState();var list=document.getElementById('batchDraftList'),draft=state.batch.draft||[],summary=document.getElementById('batchDraftSummary');document.getElementById('batchCount').textContent=termCountLabel(draft.length);list.innerHTML='';if(!draft.length){list.innerHTML='<div class="batch-empty">Osnutek je prazen. Izberi dneve in dodaj časovno skupino.</div>';summary.textContent='Osnutek je prazen.';syncBatchControls();return}var grouped={};draft.forEach(function(x){var key=batchKey(x);if(!grouped[key])grouped[key]=Object.assign({count:0},x);grouped[key].count++});Object.keys(grouped).sort().forEach(function(key){var g=grouped[key],row=document.createElement('div');row.className='batch-draft-row';row.innerHTML='<div class="batch-date">'+escHtml(dPretty(g.datum))+'</div><div class="batch-time mono">'+escHtml(g.start+'–'+g.end)+'</div><div class="batch-qty"><span class="type-badge '+escHtml(g.tip)+'">'+escHtml(tipName(g.tip))+'</span> · '+g.count+' mest</div>';var actions=document.createElement('div');actions.className='draft-actions';var edit=document.createElement('button');edit.textContent='Uredi';edit.setAttribute('aria-label','Uredi osnutek '+dPretty(g.datum)+' '+g.start);edit.onclick=function(){openDraftEditor(key)};var remove=document.createElement('button');remove.textContent='×';remove.className='batch-remove';remove.setAttribute('aria-label','Odstrani osnutek '+dPretty(g.datum)+' '+g.start);remove.onclick=function(){if(!batchEditable())return;state.batch.draft=state.batch.draft.filter(function(x){return batchKey(x)!==key});saveBatchState();renderBatchCalendar();renderBatchDraft()};actions.appendChild(edit);actions.appendChild(remove);row.appendChild(actions);list.appendChild(row)});summary.textContent=state.batch.pending?'Objava čaka na potrditev. Ponovitev uporablja isto oznako in ne doda dvojnikov.':termCountLabel(draft.length)+' · '+Math.round(draft.reduce(function(sum,x){return sum+hours(x.start,x.end)},0)*100)/100+' razpisanih ur';syncBatchControls()}
+function batchClearDraft(){if(!batchEditable())return;if(!confirm('Počistim vse neobjavljene osnutke? Objavljeni termini ostanejo.'))return;state.batch.draft=[];saveBatchState();renderBatchCalendar();renderBatchDraft();toast('Osnutek je počiščen.')}
+function batchPublish(){ensureBatchState();if(state.batch.publishing)return Promise.resolve();var pending=state.batch.pending,created=false;if(!pending){var snapshot=state.batch.draft.map(function(x){return Object.assign({},x)});if(!snapshot.length)return Promise.resolve();if(snapshot.length>500||snapshot.some(function(x){return !validDraftItem(x)})){toast('Preveri osnutek; dovoljenih je največ 500 veljavnih terminov.');return Promise.resolve()}if(new Set(snapshot.map(function(x){return x.clientId})).size!==snapshot.length){toast('Osnutek vsebuje ponovljene oznake. Pred objavo ga preveri.');return Promise.resolve()}pending={requestId:newDraftId(),items:snapshot};state.batch.pending=pending;created=true}if(!saveBatchState()){if(created)state.batch.pending=null;toast('Objava ni bila poslana: osnutka ni mogoče varno shraniti v napravo.');return Promise.resolve()}state.batch.publishing=true;syncBatchControls();var items=pending.items.map(function(x){return {datum:x.datum,start:x.start,end:x.end,tip:x.tip}}),pin=state.adminPin;
+  return call('addSlotsBatch',items,pin,pending.requestId).then(function(res){if(!res||res.ok!==true||res.added!==pending.items.length){if(res&&res.rejected){state.batch.pending=null;saveBatchState()}throw Error(res&&res.msg||'Potrditve objave ni bilo mogoče prejeti. Osnutek je ohranjen.')}var ids=new Set(pending.items.map(function(x){return x.clientId}));state.batch.draft=state.batch.draft.filter(function(x){return !ids.has(x.clientId)});state.batch.pending=null;state.batch.selected={};var saved=saveBatchState();invalidateClientMonths(res.affectedMonths||[]);renderBatchCalendar();toast(saved?'Objavljeno: '+termCountLabel(res.added)+'.':'Objavljeno, vendar naprava ni shranila potrditve. Ne ustvarjaj nove kopije osnutka.');showCalendarMonth(state.ym,true).catch(function(){});return loadBatchExisting(true)}).catch(function(e){toast(e.message||String(e));saveBatchState()}).finally(function(){state.batch.publishing=false;renderBatchDraft();syncBatchControls()})
+}
+
+ 
+document.querySelectorAll('[data-admin-tab]').forEach(function(b){b.onclick=function(){setAdminTab(b.getAttribute('data-admin-tab'))}});
+document.getElementById('adminMonth').onchange=function(){if(!this.value)return;state.adminMonth=this.value;if(state.adminTab==='add'){ensureBatchState();state.batch.ym=this.value;saveBatchState()}renderAdminCurrent()};
+document.getElementById('adminRefresh').onclick=renderAdminCurrent;
+document.getElementById('batchPrev').onclick=function(){batchShiftMonth(-1)};
+document.getElementById('batchNext').onclick=function(){batchShiftMonth(1)};
+document.getElementById('batchToday').onclick=function(){ensureBatchState();state.batch.ym=ymToday();state.batch.focusDate=todayStr();saveBatchState();renderBatchCalendar();loadBatchExisting(false)};
+document.getElementById('batchWeekdays').onclick=batchSelectWorkdays;
+document.getElementById('batchRefreshExisting').onclick=function(){loadBatchExisting(true)};
+document.getElementById('batchClearSelection').onclick=batchClearSelection;
+document.getElementById('batchAddDraft').onclick=batchAddToDraft;
+document.getElementById('batchClearDraft').onclick=batchClearDraft;
+document.getElementById('batchPublish').onclick=batchPublish;
+document.getElementById('aSeed').onclick=function(){var btn=this;btn.disabled=true;call('seedExamples',state.adminMonth,state.adminPin).then(function(res){btn.disabled=false;if(!res||res.ok===false){toast((res&&res.msg)||'Napaka.');return}toast('Dodano: '+res.added+' terminov.');refreshAfterMutation(res);setAdminTab('slots')}).catch(handleErr)};
+document.getElementById('deleteModeToggle').onchange=function(){state.deleteMode=this.checked;renderCalendar(state.monthCache[state.ym]||[]);toast(this.checked?'Brisanje iz koledarja VKLOPLJENO.':'Brisanje izklopljeno.')};
+
+ 
+function showTab(tab){
+  state.tab=tab;['cal','mine','stats','admin'].forEach(function(t){document.getElementById('tab-'+t).hidden=t!==tab});document.querySelectorAll('.tabs>button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-tab')===tab)});
+  if(tab==='mine')renderMine();if(tab==='stats')loadStatsYear(false);if(tab==='admin'){state.adminMonth=state.adminMonth||state.ym;document.getElementById('adminMonth').value=state.adminMonth;renderAdminCurrent()}
+}
+document.querySelectorAll('.tabs>button').forEach(function(b){b.onclick=function(){showTab(b.getAttribute('data-tab'))}});
+document.getElementById('prev').onclick=function(){shiftMonth(-1)};document.getElementById('next').onclick=function(){shiftMonth(1)};document.getElementById('today').onclick=function(){showCalendarMonth(ymToday())};document.getElementById('freeOnly').onchange=function(){state.freeOnly=this.checked;renderCalendar(state.monthCache[state.ym]||[])};document.getElementById('lockBtn').onclick=function(){if(state.adminPin)showTab('admin');else openAdminUnlock()};document.getElementById('aLock').onclick=lockAdmin;
+document.getElementById('statsPrevYear').onclick=function(){shiftStatsYear(-1)};document.getElementById('statsNextYear').onclick=function(){shiftStatsYear(1)};document.getElementById('statsThisYear').onclick=function(){state.statsYear=new Date().getFullYear();state.statsMonth=ymToday();loadStatsYear(false)};
+
+function nextRead(key){state.readTickets[key]=(state.readTickets[key]||0)+1;return state.readTickets[key]}
+
+function readCurrent(key,ticket){return state.readTickets[key]===ticket}
+
+function applyClock(res){if(res&&res.timeZone)state.timeZone=res.timeZone;if(res&&res.serverNow)state.clockOffset=Number(res.serverNow)-Date.now()}
+
+function nowStamp(){return new Intl.DateTimeFormat('sv-SE',{timeZone:state.timeZone||'Europe/Ljubljana',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(Date.now()+(state.clockOffset||0))).replace(' ','T')}
+
+function isPastSlot(s){return s.datum+'T'+s.end<=nowStamp()}
+
+function markFresh(fetchedAt){state.lastSync=Number(fetchedAt)||Date.now();var e=document.getElementById('lastUpdated');if(e)e.textContent='Posodobljeno '+new Date(state.lastSync).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'})}
+
+function refreshVisible(manual){if(state.refreshing||state.batch.publishing||(!manual&&document.getElementById('scrim').classList.contains('on')))return Promise.resolve();state.refreshing=true;var btn=document.getElementById('refreshData');btn.disabled=true;btn.textContent='Osvežujem…';var job=state.tab==='stats'?loadStatsYear(true):state.tab==='mine'?renderMine():state.tab==='admin'?Promise.resolve(renderAdminCurrent(true)):showCalendarMonth(state.ym,true);return Promise.resolve(job).catch(function(e){document.getElementById('lastUpdated').textContent='Osvežitev ni uspela';if(manual)toast(e&&e.message||'Osvežitev ni uspela.')}).finally(function(){state.refreshing=false;btn.disabled=false;btn.textContent='Osveži'})}
+
+function showDay(ds){var sheet=document.getElementById('sheet');sheet.innerHTML='<h3>'+escHtml(dPretty(ds))+'</h3><div class="sub">Vsi termini tega dne · klikni termin za podrobnosti</div>';var list=document.createElement('div');list.className='day-slot-list';var rows=(state.monthCache[ds.slice(0,7)]||[]).filter(function(s){return s.datum===ds}).sort(function(a,b){return a.start.localeCompare(b.start)});rows.forEach(function(s){list.appendChild(chip(s))});if(!rows.length)list.textContent='Ta dan ni terminov.';sheet.appendChild(list);addActions(sheet,[{label:'Zapri',cls:'ghost',fn:closeSheet}]);openScrim()}
+
+function statsProjection(data,mode){var field=mode==='all'?'total':mode==='planned'?'planned':'past',personField=mode==='all'?'ure':field,countField=mode==='all'?'count':mode+'Count';function project(bucket){var people=(bucket.people||[]).filter(function(p){return (Number(p[countField])||0)>0}).map(function(p){return Object.assign({},p,{ure:Number(p[personField])||0,count:Number(p[countField])||0})}).sort(function(a,b){return b.ure-a.ure||a.ime.localeCompare(b.ime,'sl')});return Object.assign({},bucket,{total:Number(bucket[field])||0,count:Number(bucket[countField])||0,people:people,peopleCount:people.length})}return {year:data.year,annual:project(data.annual||{}),months:(data.months||[]).map(project)}}
+
+function statsScopeLabel(){return state.statsMode==='all'?'Vsi vpisi':state.statsMode==='planned'?'Načrtovane ure':'Pretekle ure'}
+
+function newDraftId(){return Date.now()+'-'+Math.random().toString(36).slice(2)+'-'+Math.random().toString(36).slice(2)}
+
+function validDraftItem(x){if(!x||!/^\d{4}-\d{2}-\d{2}$/.test(x.datum||''))return false;var d=new Date(x.datum+'T12:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===x.datum&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.start)&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(x.end)&&x.end>x.start&&['NE','DA','FBX'].indexOf(x.tip)>=0}
+
+function batchEditable(){if(state.batch.publishing||state.batch.pending){toast(state.batch.publishing?'Objava poteka. Počakaj.':'Najprej potrdi prejšnjo objavo z gumbom Ponovi isto objavo.');return false}return true}
+
+function syncBatchControls(){var publishing=!!state.batch.publishing,locked=publishing||!!state.batch.pending;document.querySelectorAll('#admin-view-add button,#admin-view-add input,#admin-view-add select').forEach(function(b){if(b.id==='batchPublish')return;var browse=['batchPrev','batchNext','batchToday','batchRefreshExisting'].indexOf(b.id)>=0;b.disabled=publishing||(locked&&!browse)});var publish=document.getElementById('batchPublish');publish.disabled=publishing||(!state.batch.draft.length&&!state.batch.pending);publish.textContent=publishing?'Objavljam…':state.batch.pending?'Ponovi isto objavo':state.batch.draft.length?'Objavi '+termCountLabel(state.batch.draft.length):'Objavi termine';document.getElementById('admin-view-add').setAttribute('aria-busy',publishing)}
+
+function openDraftEditor(key){if(!batchEditable())return;var members=state.batch.draft.filter(function(x){return batchKey(x)===key});if(!members.length)return;var g=members[0],sheet=document.getElementById('sheet');sheet.innerHTML='<h3>Uredi samo ta osnutek</h3><div class="sub">Sprememba ne vpliva na druge skupine ali že objavljene termine.</div>';var grid=document.createElement('div');grid.className='admin-form-grid';var date=adminField('Datum','date',g.datum),start=adminField('Od','time',g.start),end=adminField('Do','time',g.end),copies=adminField('Število mest','number',members.length);copies.input.min=1;copies.input.max=20;var type=document.createElement('select');type.setAttribute('aria-label','Vrsta termina');[['NE','Navaden'],['DA','Administracija'],['FBX','FBX']].forEach(function(t){var o=document.createElement('option');o.value=t[0];o.textContent=t[1];type.appendChild(o)});type.value=g.tip;[date.wrap,start.wrap,end.wrap,copies.wrap,type].forEach(function(e){grid.appendChild(e)});sheet.appendChild(grid);addActions(sheet,[{label:'Shrani osnutek',cls:'primary',fn:function(){if(!batchEditable())return;var update={datum:date.input.value,start:start.input.value,end:end.input.value,tip:type.value},n=Number(copies.input.value);if(!validDraftItem(update)||!Number.isInteger(n)||n<1||n>20){toast('Preveri datum, čas in število mest.');return}var current=state.batch.draft.filter(function(x){return batchKey(x)===key});if(!current.length){toast('Osnutek ni več na voljo.');closeSheet();return}var others=state.batch.draft.filter(function(x){return batchKey(x)!==key});if(others.some(function(x){return batchKey(x)===batchKey(update)})){toast('Takšna skupina že obstaja v osnutku.');return}for(var i=0;i<n;i++)others.push(Object.assign({clientId:current[i]?current[i].clientId:newDraftId()},update));state.batch.draft=others.sort(function(a,b){return batchKey(a).localeCompare(batchKey(b))});saveBatchState();renderBatchCalendar();renderBatchDraft();closeSheet();toast('Osnutek posodobljen.')}},{label:'Prekliči',cls:'ghost',fn:closeSheet}]);openScrim()}
+
+function updateView(){var cal=document.getElementById('tab-cal');cal.classList.toggle('list-view',state.view==='list');cal.classList.toggle('month-view',state.view==='month');document.querySelectorAll('[data-view]').forEach(function(b){var selected=b.dataset.view===state.view;b.classList.toggle('on',selected);b.setAttribute('aria-pressed',selected)})}
+
+function showPersonDates(name,ym){var sheet=document.getElementById('sheet'),mode=state.statsMode;sheet.innerHTML='<h3>'+escHtml(name)+'</h3><div class="sub">'+escHtml(ym.length===4?ym:label(ym))+' · '+statsScopeLabel()+'</div><div class="person-log">Nalagam datume…</div>';addActions(sheet,[{label:'Zapri',cls:'ghost',fn:closeSheet}]);openScrim();var box=sheet.querySelector('.person-log'),months=ym.length===4?Array.from({length:12},function(_,i){return ym+'-'+pad(i+1)}):[ym];fetchMonths(months,false).then(function(){if(!box.isConnected)return;var rows=[];months.forEach(function(m){rows=rows.concat(state.monthCache[m]||[])});rows=rows.filter(function(s){return s.kind==='taken'&&String(s.ime).toLowerCase()===name.toLowerCase()&&(mode==='all'||(mode==='past'?isPastSlot(s):!isPastSlot(s)))}).sort(function(a,b){return a.datum.localeCompare(b.datum)||a.start.localeCompare(b.start)});box.innerHTML='';if(!rows.length){box.textContent='Za izbrani prikaz ni vpisov.';return}rows.forEach(function(s){var row=document.createElement('div');row.className='person-log-row';row.innerHTML='<div><strong>'+escHtml(dPretty(s.datum))+'</strong><small>'+escHtml(s.start+'–'+s.end)+' · '+escHtml(tipName(s.tip))+'</small></div><div><strong>'+escHtml(s.ure==null?hours(s.start,s.end):s.ure)+' h</strong><small>'+(isPastSlot(s)?'Pretekli vpis':'Načrtovano / v teku')+'</small></div>';box.appendChild(row)})}).catch(function(){if(box.isConnected)box.textContent='Datumov ni mogoče naložiti. Zapri in poskusi znova.'})}
+
+function initUI(){
+  state.readTickets={};state.monthFetchedAt={};state.statsFetchedAt={};state.lastSync=0;state.view='month';state.statsMode='past';state.batch.existingAt={};state.batch.publishing=false;state.batch.pending=null;
+  var cal=document.getElementById('tab-cal'),switcher=document.createElement('div');switcher.className='view-switch';switcher.setAttribute('aria-label','Prikaz koledarja');[['month','Mesec'],['list','Seznam']].forEach(function(v){var b=document.createElement('button');b.textContent=v[1];b.dataset.view=v[0];b.onclick=function(){state.view=v[0];updateView()};switcher.appendChild(b)});document.querySelector('.calendar-tools').prepend(switcher);updateView();
+  document.querySelector('[data-tab="mine"]').textContent='Moje ure';document.getElementById('tabAdmin').textContent='Upravljanje';document.getElementById('today').textContent='Danes';var quick=document.createElement('button');quick.id='quickAdd';quick.className='primary quick-add';quick.textContent='+ Dodaj termine';quick.hidden=!state.adminPin;quick.onclick=function(){showTab('admin');setAdminTab('add');document.getElementById('admin-view-add').scrollIntoView({block:'start'})};document.querySelector('.bar').insertBefore(quick,document.getElementById('lockBtn'));
+  document.querySelector('.legend').innerHTML='<span><i style="background:#bac1ca"></i>Preteklo</span><span><i style="background:#2455d9"></i>Moj prihodnji termin</span><span><i style="background:#21834b"></i>Navaden</span><span><i style="background:#8051bd"></i>Administracija</span><span><i style="background:#c77b09"></i>FBX</span>';
+  var stats=document.getElementById('tab-stats');document.querySelector('.stats-hero .hint').textContent='Za vse uporabnike · kdo, koliko ur in kdaj';var note=document.createElement('p');note.className='public-note';note.textContent='Pretekle ure so vpisi, katerih termin se je končal; niso potrdilo dejansko opravljenega dela. Načrtovane ure vključujejo prihodnje termine in termine v teku. Klikni osebo za datume.';stats.insertBefore(note,document.getElementById('statsKpis'));var modes=document.createElement('div');modes.className='view-switch stats-modes';[['past','Pretekle'],['planned','Načrtovane'],['all','Vse vpisane']].forEach(function(m){var b=document.createElement('button');b.dataset.statsMode=m[0];b.textContent=m[1];b.onclick=function(){state.statsMode=m[0];if(state.statsCache[state.statsYear])renderStatsDashboard(state.statsCache[state.statsYear])};modes.appendChild(b)});stats.insertBefore(modes,document.getElementById('statsYearGrid'));
+  var annual=document.createElement('details');annual.className='annual-disclosure';var title=document.createElement('summary');title.textContent='Pregled celega leta po osebah';annual.appendChild(title);annual.appendChild(document.getElementById('statsMatrix'));annual.appendChild(document.getElementById('annualRanking'));stats.appendChild(annual);
+  var freshness=document.createElement('div');freshness.className='freshness';freshness.innerHTML='<span id="lastUpdated" role="status">Preverjam podatke…</span><button id="refreshData" class="ghost">Osveži</button>';document.querySelector('main').prepend(freshness);document.getElementById('refreshData').onclick=function(){refreshVisible(true)};
+  var presets=document.createElement('div');presets.className='time-presets';presets.innerHTML='<span class="hint">Hitri časi:</span>';[['07:00','12:00'],['12:00','16:00'],['16:00','20:00']].forEach(function(t){var b=document.createElement('button');b.textContent=t[0]+'–'+t[1];b.onclick=function(){if(!batchEditable())return;document.getElementById('batchStart').value=t[0];document.getElementById('batchEnd').value=t[1]};presets.appendChild(b)});document.getElementById('batchAddDraft').before(presets);
+  document.getElementById('msg').setAttribute('role','status');document.getElementById('msg').setAttribute('aria-live','polite');document.getElementById('batchPublish').setAttribute('aria-live','polite');
+  document.addEventListener('keydown',function(e){var sheet=document.getElementById('sheet');if(!document.getElementById('scrim').classList.contains('on'))return;if(e.key==='Escape'&&!state.sheetBusy)closeSheet();if(e.key==='Tab'){var controls=Array.from(sheet.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')).filter(function(x){return x.getClientRects().length});if(!controls.length){e.preventDefault();sheet.focus();return}var first=controls[0],last=controls[controls.length-1];if(e.shiftKey&&(document.activeElement===first||document.activeElement===sheet)){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+  function resume(){if(!document.hidden&&Date.now()-state.lastSync>45000)refreshVisible(false)}document.addEventListener('visibilitychange',resume);window.addEventListener('focus',resume);setInterval(function(){if(!document.hidden)refreshVisible(false)},90000);window.addEventListener('beforeunload',function(e){if(state.batch.publishing){e.preventDefault();e.returnValue=''}})
+}
+
+ 
+initUI();
+var nameEl=document.getElementById('name');nameEl.value=loadName();state.name=nameEl.value.trim();nameEl.addEventListener('input',function(){state.name=this.value.trim();saveName(state.name);nextRead('mine');clearTimeout(state.nameTimer);state.nameTimer=setTimeout(function(){renderCalendar(state.monthCache[state.ym]||[]);if(state.tab==='mine')renderMine()},300)});
+state.ym=ymToday();state.adminMonth=state.ym;state.statsYear=new Date().getFullYear();state.statsMonth=state.ym;document.getElementById('adminMonth').value=state.adminMonth;showCalendarMonth(state.ym);
+(function(){var saved='';try{saved=localStorage.getItem('razpored.pin')||''}catch(e){}if(!saved)return;call('checkPin',saved).then(function(res){if(res&&res.ok)unlockAdmin(saved);else try{localStorage.removeItem('razpored.pin')}catch(e){}}).catch(function(){})})();
+
+</script>
+</body>
+</html>
