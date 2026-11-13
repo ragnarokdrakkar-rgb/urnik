@@ -519,6 +519,32 @@ button:focus-visible { outline:3px solid #9db2ff; outline-offset:2px; }
   .tabs { gap:12px; }
   .stats-kpis .kpi-label { font-size:10px; }
 }
+
+/* ---- Barve po osebah + prosti termini ---- */
+.legend { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+.legend-item { border:1px solid; border-left-width:4px; border-radius:6px; padding:3px 8px; font-size:12px; font-weight:700; line-height:1.3; }
+.legend-free { background:#fff; border:2px dashed #1f9d57; color:#17703c; }
+.chip .t-short,.chip .who-short { display:none; }
+.chip.taken.person[data-tip] { background:var(--pbg)!important; border-color:var(--pbd)!important; color:var(--ptx)!important; box-shadow:none; border-left-width:5px; }
+.chip.taken.person .who { color:var(--ptx); font-weight:700; }
+.chip.taken.person.mine[data-tip] { box-shadow:0 0 0 2px var(--pbd); }
+.chip.taken.person.past[data-tip] { opacity:.6; }
+.chip.taken.person .slot-type { background:#ffffffb3; color:var(--ptx); }
+.chip.free[data-tip] { background:#fff!important; border:2px dashed #1f9d57!important; color:#17703c!important; }
+.chip.free .who { color:#17703c; font-weight:800; }
+.chip.free.past[data-tip] { border-color:#b3bcc8!important; color:#7a8494!important; }
+.chip.free.past .who { color:#7a8494; }
+@media(max-width:720px) {
+  .legend { gap:4px; margin-bottom:8px; }
+  .legend-item { font-size:11px; padding:2px 6px; }
+  .month-view .cell { min-height:112px; }
+  .month-view .chip { min-height:44px; padding:3px 2px; text-align:center; }
+  .month-view .chip.taken.person[data-tip] { border-left-width:3px; }
+  .month-view .chip .t { display:none; }
+  .month-view .chip .t-short { display:block; font-size:10px; font-weight:600; line-height:1.2; white-space:nowrap; }
+  .month-view .chip .who-short { display:block; font-size:10px; font-weight:800; line-height:1.15; margin-top:1px; overflow-wrap:anywhere; letter-spacing:-.02em; }
+  .month-view .chip .slot-type { font-size:8px; margin-top:2px; padding:1px 0; background:transparent!important; opacity:.85; }
+}
 </style>
 </head>
 <body>
@@ -654,6 +680,15 @@ function call(method){
   });
 }
 
+
+// Barve oseb: vsaka oseba dobi svojo barvo, ki ostane ista (shranjena v tej napravi).
+var PERSON_COLORS=[['#d5f1ec','#0f8a7a','#0a4a42'],['#ffe3c9','#d9670a','#743705'],['#eadfff','#7a45c9','#41207a'],['#ffdcea','#d1367a','#771541'],['#fff1b3','#b08a00','#5e4a00'],['#d3ecfa','#1784b8','#0b4766'],['#f6d9d2','#b4472f','#692416'],['#e1f3cb','#5b9a17','#30520b'],['#f6daf6','#a934a9','#5c195c'],['#e0e5ee','#56627a','#2b3343']];
+var personMap=(function(){try{return JSON.parse(localStorage.getItem('razpored.barve')||'{}')||{}}catch(e){return{}}})();
+function personKey(n){return String(n||'').trim().toLowerCase()}
+function personColor(name){var k=personKey(name);if(personMap[k]==null){var used={},n=0;Object.keys(personMap).forEach(function(x){used[personMap[x]]=1;n++});var idx=0;if(n<PERSON_COLORS.length){while(used[idx])idx++}else idx=n%PERSON_COLORS.length;personMap[k]=idx;try{localStorage.setItem('razpored.barve',JSON.stringify(personMap))}catch(e){}}return PERSON_COLORS[personMap[k]%PERSON_COLORS.length]}
+function shortHM(hm){var p=String(hm||'').split(':');return String(Number(p[0])||0)+(p[1]&&p[1]!=='00'?':'+p[1]:'')}
+function renderLegend(slots,grid){var box=document.getElementById('legend');if(!box){box=document.createElement('div');box.id='legend';box.className='legend';var host=grid.parentNode,anchor=host.querySelector('.week-head')||grid;anchor.parentNode.insertBefore(box,anchor)}box.innerHTML='';var names={},free=false;slots.forEach(function(s){if(s.kind==='taken'&&s.ime){var k=personKey(s.ime);if(!names[k])names[k]=s.ime}else if(s.kind==='free')free=true});var list=Object.keys(names).sort(function(a,b){return a.localeCompare(b,'sl')});list.forEach(function(k){personColor(names[k])});list.forEach(function(k){var c=personColor(names[k]),el=document.createElement('span');el.className='legend-item';el.style.background=c[0];el.style.borderColor=c[1];el.style.color=c[2];el.textContent=names[k];box.appendChild(el)});if(free){var f=document.createElement('span');f.className='legend-item legend-free';f.textContent='Prosto';box.appendChild(f)}box.style.display=(list.length||free)?'':'none'}
+
 var MONTHS=['januar','februar','marec','april','maj','junij','julij','avgust','september','oktober','november','december'];
 var state={
   ym:null,name:'',tab:'cal',freeOnly:false,adminPin:'',deleteMode:false,
@@ -693,13 +728,13 @@ function refreshAfterMutation(res){invalidateClientMonths(res&&res.affectedMonth
  
 function renderMeter(slots){var total=0,taken=0;(slots||[]).forEach(function(s){var h=Math.max(0,hours(s.start,s.end));total+=h;if(s.kind==='taken')taken+=h});var text=Math.round(taken*100)/100+' / '+Math.round(total*100)/100+' h';document.getElementById('cov').textContent=text;document.getElementById('cov').title='Vpisane / razpisane ure';document.getElementById('covfill').style.width=total?Math.min(100,taken/total*100)+'%':'0%'}
 function renderCalendar(slots){
-  var panel=document.getElementById('tab-cal');panel.classList.toggle('delete-mode',state.deleteMode);var grid=document.getElementById('grid');grid.innerHTML='';var p=state.ym.split('-').map(Number),y=p[0],m=p[1],firstWD=(new Date(y,m-1,1).getDay()+6)%7,dim=new Date(y,m,0).getDate(),today=todayStr(),WD=['pon','tor','sre','čet','pet','sob','ned'],map={};(slots||[]).forEach(function(s){(map[s.datum]=map[s.datum]||[]).push(s)});for(var i=0;i<firstWD;i++){var blank=document.createElement('div');blank.className='cell empty';grid.appendChild(blank)}
+  var panel=document.getElementById('tab-cal');panel.classList.toggle('delete-mode',state.deleteMode);var grid=document.getElementById('grid');grid.innerHTML='';var p=state.ym.split('-').map(Number),y=p[0],m=p[1],firstWD=(new Date(y,m-1,1).getDay()+6)%7,dim=new Date(y,m,0).getDate(),today=todayStr(),WD=['pon','tor','sre','čet','pet','sob','ned'],map={};(slots||[]).forEach(function(s){(map[s.datum]=map[s.datum]||[]).push(s)});renderLegend(slots||[],grid);for(var i=0;i<firstWD;i++){var blank=document.createElement('div');blank.className='cell empty';grid.appendChild(blank)}
   for(var day=1;day<=dim;day++){(function(day){var ds=y+'-'+pad(m)+'-'+pad(day),cell=document.createElement('div');cell.className='cell'+(ds===today?' today':'');var head=document.createElement('button');head.className='daynum';head.innerHTML='<span class="wd">'+WD[(new Date(y,m-1,day).getDay()+6)%7]+' </span>'+day;head.setAttribute('aria-label','Vsi termini: '+dPretty(ds));head.onclick=function(){showDay(ds)};cell.appendChild(head);var orig=(map[ds]||[]).slice().sort(function(a,b){return a.start.localeCompare(b.start)||String(a.ime||'').localeCompare(String(b.ime||''))}),items=state.freeOnly?orig.filter(function(s){return s.kind==='free'}):orig;cell.classList.toggle('no-slots',!items.length);
     if(!items.length){var empty=document.createElement('div');empty.className='empty-day';empty.textContent=state.freeOnly&&orig.length?'Zasedeno':'—';cell.appendChild(empty)}
     var featured=items.slice().sort(function(a,b){var am=a.kind==='taken'&&!isPastSlot(a)&&String(a.ime).toLowerCase()===state.name.toLowerCase(),bm=b.kind==='taken'&&!isPastSlot(b)&&String(b.ime).toLowerCase()===state.name.toLowerCase();return Number(bm)-Number(am)||a.start.localeCompare(b.start)}).slice(0,2);
     items.forEach(function(s){var b=chip(s);if(featured.indexOf(s)<0)b.classList.add('compact-hidden');cell.appendChild(b)});if(items.length>2){var more=document.createElement('button');more.className='day-more';more.textContent='+'+(items.length-2)+' več';more.setAttribute('aria-label','Pokaži vseh '+items.length+' terminov: '+dPretty(ds));more.onclick=function(){showDay(ds)};cell.appendChild(more)}grid.appendChild(cell)})(day)}
 }
-function chip(s){var taken=s.kind==='taken',mine=taken&&state.name&&String(s.ime||'').toLowerCase()===state.name.toLowerCase(),ended=isPastSlot(s),b=document.createElement('button');b.className='chip '+(taken?'taken':'free')+(mine?' mine':'')+(ended?' past':' upcoming');b.setAttribute('data-tip',s.tip);var pill=document.createElement('span');pill.className='pill';var body=document.createElement('span');body.className='body';var t=document.createElement('span');t.className='t mono';t.innerHTML='<span class="time-start">'+escHtml(s.start)+'</span><span class="time-dash">–</span><span class="time-end">'+escHtml(s.end)+'</span>';var who=document.createElement('span');who.className='who';who.textContent=taken?(mine?'Moj termin · ':'')+s.ime+(s.ure!=null?' · '+s.ure+' h':''):'Prosto';var type=document.createElement('span');type.className='slot-type';type.dataset.kind=s.tip;type.innerHTML='<span class="type-full">'+escHtml(s.tip==='FBX'?'FBX':tipName(s.tip))+'</span><span class="type-short">'+(s.tip==='DA'?'Admin':s.tip==='FBX'?'FBX':'Nav.')+'</span>';body.appendChild(t);body.appendChild(who);body.appendChild(type);b.appendChild(pill);b.appendChild(body);b.title=dPretty(s.datum)+' · '+s.start+'–'+s.end+' · '+tipName(s.tip)+' · '+who.textContent+(ended?' · Preteklo':'');b.setAttribute('aria-label',b.title);
+function chip(s){var taken=s.kind==='taken',mine=taken&&state.name&&String(s.ime||'').toLowerCase()===state.name.toLowerCase(),ended=isPastSlot(s),b=document.createElement('button');b.className='chip '+(taken?'taken':'free')+(mine?' mine':'')+(ended?' past':' upcoming');b.setAttribute('data-tip',s.tip);var pill=document.createElement('span');pill.className='pill';var body=document.createElement('span');body.className='body';var t=document.createElement('span');t.className='t mono';t.innerHTML='<span class="time-start">'+escHtml(s.start)+'</span><span class="time-dash">–</span><span class="time-end">'+escHtml(s.end)+'</span>';var who=document.createElement('span');who.className='who';who.textContent=taken?(mine?'Moj termin · ':'')+s.ime+(s.ure!=null?' · '+s.ure+' h':''):'Prosto';var type=document.createElement('span');type.className='slot-type';type.dataset.kind=s.tip;type.innerHTML='<span class="type-full">'+escHtml(s.tip==='FBX'?'FBX':tipName(s.tip))+'</span><span class="type-short">'+(s.tip==='DA'?'Admin':s.tip==='FBX'?'FBX':'Nav.')+'</span>';var ts=document.createElement('span');ts.className='t-short mono';ts.textContent=shortHM(s.start)+'–'+shortHM(s.end);var ws=document.createElement('span');ws.className='who-short';ws.textContent=taken?s.ime:'Prosto';if(taken){var pc=personColor(s.ime);b.classList.add('person');b.style.setProperty('--pbg',pc[0]);b.style.setProperty('--pbd',pc[1]);b.style.setProperty('--ptx',pc[2])}body.appendChild(t);body.appendChild(ts);body.appendChild(who);body.appendChild(ws);body.appendChild(type);b.appendChild(pill);b.appendChild(body);b.title=dPretty(s.datum)+' · '+s.start+'–'+s.end+' · '+tipName(s.tip)+' · '+who.textContent+(ended?' · Preteklo':'');b.setAttribute('aria-label',b.title);
   b.onclick=function(){if(state.deleteMode){if(!state.adminPin){toast('Admin ni odklenjen.');return}if(confirm('Izbrišem CEL osnovni termin za '+dPretty(s.datum)+'? Izbrisani bodo tudi njegovi vpisi.')){setBusy(true);call('deleteSlot',s.slotId,state.adminPin).then(function(res){setBusy(false);if(!res||res.ok===false){toast(res&&res.msg||'Napaka.');return}toast('Termin izbrisan.');refreshAfterMutation(res)}).catch(handleErr)}return}openSlot(s)};return b
 }
 function shiftMonth(delta){showCalendarMonth(addMonths(state.ym,delta))}
